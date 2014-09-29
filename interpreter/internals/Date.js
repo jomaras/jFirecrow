@@ -1,41 +1,37 @@
 (function() {
 /*************************************************************************************/
-    var ValueTypeHelper = Firecrow.ValueTypeHelper;
-    var fcInternals = Firecrow.Interpreter.Internals;
-
-    fcInternals.Date = function(value, globalObject, codeConstruct)
+    var Date;
+    Firecrow.N_Interpreter.Date = Date = function(value, globalObject)
     {
-        try
-        {
-            this.initObject(globalObject);
-            this.constructor = fcInternals.Date;
+        this.initObject(globalObject);
+        this.constructor = Date;
 
-            this.value = value;
-
-            this.addProperty("__proto__", this.globalObject.fcDatePrototype);
-        }
-        catch(e) { fcInternals.Date.notifyError("Error when creating a Date object: " + e); }
+        this.value = value;
+        this.addProperty("__proto__", this.globalObject.fcDatePrototype);
     };
 
-    fcInternals.Date.notifyError = function(message) { alert("Date - " + message); };
-    fcInternals.Date.prototype = new fcInternals.Object();
+    Date.notifyError = function(message) { alert("Date - " + message); };
+    Date.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcInternals.DatePrototype = function(globalObject)
+    var DatePrototype;
+    Firecrow.N_Interpreter.DatePrototype = DatePrototype = function(globalObject)
     {
         this.initObject(globalObject, null, Date.prototype, globalObject.fcObjectPrototype);
-        this.constructor = fcInternals.DatePrototype;
+
+        this.constructor = DatePrototype;
         this.name = "DatePrototype";
+
         //https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date#Methods_2
-        fcInternals.DatePrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        DatePrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
             if(Date.prototype[propertyName] == null) { return; }
             this.addProperty
             (
                 propertyName,
-                new fcInternals.fcValue
+                new Firecrow.N_Interpreter.fcValue
                 (
                     Date.prototype[propertyName],
-                    fcInternals.Function.createInternalNamedFunction(globalObject, propertyName, this),
+                    Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, propertyName, this),
                     null
                 ),
                 null,
@@ -44,7 +40,7 @@
         }, this);
     };
 
-    fcInternals.DatePrototype.CONST =
+    DatePrototype.CONST =
     {
         INTERNAL_PROPERTIES :
         {
@@ -67,9 +63,10 @@
         }
     };
 
-    fcInternals.DatePrototype.prototype = new fcInternals.Object(null);
+    DatePrototype.prototype = new Firecrow.N_Interpreter.Object(null);
 
-    fcInternals.DateFunction = function(globalObject)
+    var DateFunction;
+    Firecrow.N_Interpreter.DateFunction = DateFunction = function(globalObject)
     {
         this.initObject(globalObject, null, Date, globalObject.fcFunctionPrototype);
 
@@ -79,13 +76,13 @@
         this.name = "Date";
     };
 
-    fcInternals.DateFunction.prototype = new fcInternals.Object(null);
+    DateFunction.prototype = new Firecrow.N_Interpreter.Object(null);
 
-    fcInternals.DateExecutor =
+    Firecrow.N_Interpreter.DateExecutor =
     {
         executeFunctionMethod: function(thisObject, functionObject, args, callExpression, globalObject)
         {
-            return new fcInternals.fcValue
+            return new Firecrow.N_Interpreter.fcValue
             (
                 Date[functionObject.value.name].apply(null, globalObject.getJsValues(args)),
                 null,
@@ -95,25 +92,9 @@
 
         executeInternalConstructor: function(callExpression, arguments, globalObject)
         {
-            var date;
+            var date = arguments.length == 0 ? new window.Date() : new window.Date(arguments[0].jsValue);
 
-            if(arguments.length == 0)
-            {
-                if(globalObject.currentEventTime != null)
-                {
-                    date = new Date();
-                }
-                else
-                {
-                    date = new Date();
-                }
-            }
-            else
-            {
-                date = new Date(arguments[0].jsValue)
-            }
-
-            return new fcInternals.fcValue(date, new fcInternals.Date(date, globalObject), callExpression);
+            return new Firecrow.N_Interpreter.fcValue(date, new Date(date, globalObject), callExpression);
         },
 
         executeInternalDateMethod : function(thisObject, functionObject, args, callExpression, callCommand)
@@ -140,7 +121,8 @@
 
             return globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, result);
         },
-        notifyError: function(message) { fcInternals.String.notifyError(message); }
+
+        notifyError: function(message) { Date.notifyError(message); }
     };
 /*************************************************************************************/
 })();

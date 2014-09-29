@@ -1,14 +1,16 @@
 (function()
 {
-    var fcInternals = Firecrow.Interpreter.Internals;
-    fcInternals.ImageFunction = function(globalObject, codeConstruct)
+    var ImageFunction;
+    Firecrow.N_Interpreter.ImageFunction = ImageFunction = function(globalObject, codeConstruct)
     {
         this.initObject(globalObject);
+
         this.addProperty("src", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, ""));
 
         this.isInternalFunction = true;
         this.name = "Image";
+        this.constructor = ImageFunction;
     };
 
-    fcInternals.ImageFunction.prototype = new fcInternals.Object();
+    ImageFunction.prototype = new Firecrow.N_Interpreter.Object();
 })();

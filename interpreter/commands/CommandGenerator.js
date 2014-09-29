@@ -1,16 +1,10 @@
-/**
- * Created by Josip Maras.
- * User: jomaras
- * Date: 22.09.14.
- * Time: 08:44
- */
 (function() {
 /*************************************************************************************/
     var ASTHelper = Firecrow.ASTHelper;
-    var Command = Firecrow.Interpreter.Command;
+    var Command = Firecrow.N_Interpreter.Command;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    var CommandGenerator = Firecrow.Interpreter.CommandGenerator =
+    var CommandGenerator = Firecrow.N_Interpreter.CommandGenerator =
     {
         generateCommands: function(program)
         {

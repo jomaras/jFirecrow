@@ -1,11 +1,10 @@
 (function() {
 /*************************************************************************************/
-    var fcInternals = Firecrow.Interpreter.Internals;
-
-    fcInternals.Error = function(implementationObject, globalObject, codeConstruct)
+    var Error;
+    Firecrow.N_Interpreter.Error = Error = function(implementationObject, globalObject, codeConstruct)
     {
         this.initObject(globalObject, codeConstruct, implementationObject, globalObject.fcErrorPrototype);
-        this.constructor = fcInternals.Error;
+        this.constructor = Error;
 
         this.addProperty("message", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, implementationObject.message), codeConstruct, false);
         this.addProperty("name", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, implementationObject.name), codeConstruct, false);
@@ -16,17 +15,18 @@
         this.addProperty("stack", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, implementationObject.stack), codeConstruct, false);
     };
 
-    fcInternals.Error.notifyError = function(message) { alert("Error - " + message); };
-    fcInternals.Error.prototype = new fcInternals.Object();
+    Firecrow.N_Interpreter.Error.notifyError = function(message) { alert("Error - " + message); };
+    Firecrow.N_Interpreter.Error.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcInternals.ErrorPrototype = function(globalObject)
+    var ErrorPrototype;
+    Firecrow.N_Interpreter.ErrorPrototype = ErrorPrototype = function(globalObject)
     {
         this.initObject(globalObject);
         this.name = "ErrorPrototype";
-        this.constructor = fcInternals.ErrorPrototype;
+        this.constructor = ErrorPrototype;
     };
 
-    fcInternals.ErrorPrototype.CONST =
+    ErrorPrototype.CONST =
     {
         INTERNAL_PROPERTIES :
         {
@@ -38,9 +38,11 @@
         }
     };
 
-    fcInternals.ErrorPrototype.prototype = new fcInternals.Object(null);
+    ErrorPrototype.prototype = new Firecrow.N_Interpreter.Object(null);
 
-    fcInternals.ErrorFunction = function(globalObject)
+    var ErrorFunction;
+
+    Firecrow.N_Interpreter.ErrorFunction = ErrorFunction = function(globalObject)
     {
         this.initObject(globalObject);
 
@@ -50,6 +52,6 @@
         this.name = "Error";
     };
 
-    fcInternals.ErrorFunction.prototype = new fcInternals.Object(null);
+    ErrorFunction.prototype = new Firecrow.N_Interpreter.Object(null);
 /*************************************************************************************/
 })();

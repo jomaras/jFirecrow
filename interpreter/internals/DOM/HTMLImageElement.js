@@ -1,25 +1,26 @@
 (function()
 {
-    var fcModel = Firecrow.Interpreter.Model;
-
-    fcModel.HTMLImageElement = function(globalObject)
+    var HTMLImageElement;
+    Firecrow.N_Interpreter.HTMLImageElement = HTMLImageElement = function(globalObject)
     {
         this.initObject(globalObject);
 
         this.addProperty("prototype", globalObject.fcHtmlImagePrototype);
 
         this.name = "HTMLImageElement";
+        this.constructor = HTMLImageElement;
     };
 
-    fcModel.HTMLImageElement.prototype = new fcModel.Object();
-    fcModel.HTMLImageElement.notifyError = function(message) { alert("HTMLImageElement - " + message);};
+    HTMLImageElement.prototype = new Firecrow.N_Interpreter.Object();
+    HTMLImageElement.notifyError = function(message) { alert("HTMLImageElement - " + message);};
 
-    fcModel.HTMLImageElementPrototype = function(globalObject)
+    var HTMLImageElementPrototype;
+    Firecrow.N_Interpreter.HTMLImageElementPrototype = HTMLImageElementPrototype = function(globalObject)
     {
         this.initObject(globalObject);
-        this.constructor = fcModel.HTMLImageElementPrototype;
+        this.constructor = HTMLImageElementPrototype;
         this.name = "HTMLImageElementPrototype";
     };
 
-    fcModel.HTMLImageElementPrototype.prototype = new fcModel.Object();
+    HTMLImageElementPrototype.prototype = new Firecrow.N_Interpreter.Object();
 })();

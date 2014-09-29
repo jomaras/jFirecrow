@@ -1,115 +1,80 @@
 (function()
 {
-    var fcInternals = Firecrow.Interpreter.Internals;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
+    var CSSStyleDeclaration;
 
-    fcInternals.CSSStyleDeclaration = function(htmlElement, cssStyleDeclaration, globalObject, codeConstruct)
+    Firecrow.N_Interpreter.CSSStyleDeclaration = CSSStyleDeclaration = function(htmlElement, cssStyleDeclaration, globalObject, codeConstruct)
     {
-        try
+
+        this.initObject(globalObject, codeConstruct);
+
+        this.htmlElement = htmlElement;
+        this.cssStyleDeclaration = cssStyleDeclaration || this.htmlElement.style;
+
+        this.constructor = CSSStyleDeclaration;
+
+        var methodObject = this.cssStyleDeclaration || CSSStyleDeclaration.prototype;
+
+        var methods = CSSStyleDeclaration.CONST.INTERNAL_PROPERTIES.METHODS;
+
+        for(var i = 0, length = methods.length; i < length; i++)
         {
-            this.initObject(globalObject, codeConstruct);
+            var method = methods[i];
 
-            this.htmlElement = htmlElement;
-            this.cssStyleDeclaration = cssStyleDeclaration || this.htmlElement.style;
-
-            this.constructor = fcInternals.CSSStyleDeclaration;
-
-            var methodObject = this.cssStyleDeclaration || CSSStyleDeclaration.prototype;
-
-            var methods = fcInternals.CSSStyleDeclaration.CONST.INTERNAL_PROPERTIES.METHODS;
-
-            for(var i = 0, length = methods.length; i < length; i++)
-            {
-                var method = methods[i];
-
-                this.addProperty
+            this.addProperty
+            (
+                method,
+                new Firecrow.N_Interpreter.fcValue
                 (
-                    method,
-                    new fcInternals.fcValue
-                    (
-                        methodObject[method],
-                        fcInternals.Function.createInternalNamedFunction(globalObject, method, this),
-                        codeConstruct
-                    ),
-                    codeConstruct,
-                    false
-                );
+                    methodObject[method],
+                    Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, method, this),
+                    codeConstruct
+                ),
+                codeConstruct,
+                false
+            );
+        }
+
+        this.getJsPropertyValue = function(propertyName, codeConstruct)
+        {
+            if(ValueTypeHelper.isPrimitive(this.cssStyleDeclaration[propertyName]))
+            {
+                return this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, this.cssStyleDeclaration[propertyName])
             }
 
-            this.getJsPropertyValue = function(propertyName, codeConstruct)
+            if(propertyName =="top" || propertyName == "left")
             {
-                if(ValueTypeHelper.isPrimitive(this.cssStyleDeclaration[propertyName]))
-                {
-                    return this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, this.cssStyleDeclaration[propertyName])
-                }
+                console.log(codeConstruct.loc.start.line + " - " + propertyName + this.getPropertyValue(propertyName, codeConstruct).jsValue)
+            }
 
-                if(propertyName =="top" || propertyName == "left")
-                {
-                    console.log(codeConstruct.loc.start.line + " - " + propertyName + this.getPropertyValue(propertyName, codeConstruct).jsValue)
-                }
+            return this.getPropertyValue(propertyName, codeConstruct);
+        };
 
-                return this.getPropertyValue(propertyName, codeConstruct);
-            };
-
-            this.addJsProperty = function(propertyName, value, codeConstruct)
-            {
-                this.cssStyleDeclaration[propertyName] = value.jsValue;
-                this.addProperty(propertyName, value, codeConstruct);
-
-                this.globalObject.dependencyCreator.createDataDependency(this.htmlElement.modelElement, codeConstruct, this.globalObject.getPreciseEvaluationPositionId());
-                fcInternals.HtmlElementExecutor.addDependencyIfImportantElement(this.htmlElement, this.globalObject, codeConstruct);
-            };
-        }
-        catch(e)
+        this.addJsProperty = function(propertyName, value, codeConstruct)
         {
-            fcInternals.CSSStyleDeclaration.notifyError("Error when creating CSSStyleDeclaration " + e);
-        }
+            this.cssStyleDeclaration[propertyName] = value.jsValue;
+            this.addProperty(propertyName, value, codeConstruct);
+
+            this.globalObject.dependencyCreator.createDataDependency(this.htmlElement.modelElement, codeConstruct, this.globalObject.getPreciseEvaluationPositionId());
+            Firecrow.N_Interpreter.HtmlElementExecutor.addDependencyIfImportantElement(this.htmlElement, this.globalObject, codeConstruct);
+        };
     };
 
-    fcInternals.CSSStyleDeclaration.prototype = new fcInternals.Object();
+    CSSStyleDeclaration.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcInternals.CSSStyleDeclaration.createStyleDeclaration = function(htmlElement, cssStyleDeclaration, globalObject, codeConstruct)
+    CSSStyleDeclaration.createStyleDeclaration = function(htmlElement, cssStyleDeclaration, globalObject, codeConstruct)
     {
-        return new fcInternals.fcValue
+        return new Firecrow.N_Interpreter.fcValue
         (
             cssStyleDeclaration,
-            new fcInternals.CSSStyleDeclaration(htmlElement, cssStyleDeclaration, globalObject, codeConstruct),
+            new CSSStyleDeclaration(htmlElement, cssStyleDeclaration, globalObject, codeConstruct),
             codeConstruct
         );
     };
 
-    fcInternals.CSSStyleDeclaration.notifyError =  function (message){debugger; alert("CSSStyleDeclaration - " + message); }
+    CSSStyleDeclaration.notifyError =  function (message){debugger; alert("CSSStyleDeclaration - " + message); }
 
-    fcInternals.CSSStyleDeclarationExecutor =
-    {
-        executeInternalMethod: function(thisObject, functionObject, args, callExpression)
-        {
-            if(!functionObject.isInternalFunction) { fcInternals.CSSStyleDeclaration.notifyError("The function should be internal when css declaration method!"); return; }
-
-            var functionObjectValue = functionObject.jsValue;
-            var thisObjectValue = thisObject.jsValue;
-            var functionName = functionObjectValue.name;
-            var fcThisValue =  thisObject.iValue;
-            var globalObject = fcThisValue.globalObject;
-            var jsArguments =  globalObject.getJsValues(args);
-
-            switch(functionName)
-            {
-                case "getPropertyPriority":
-                case "getPropertyValue":
-                case "item":
-                    var result = thisObjectValue[functionName].apply(thisObjectValue, jsArguments);
-                    return globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, result);
-                case "removeProperty":
-                case "setProperty":
-                default:
-                    fcInternals.CSSStyleDeclaration.notifyError("Unhandled internal method in cssStyleDeclaration:" + functionName);
-                    return;
-            }
-        }
-    };
-
-    fcInternals.CSSStyleDeclaration.CONST =
+    CSSStyleDeclaration.CONST =
     {
         INTERNAL_PROPERTIES :
         {
@@ -140,6 +105,35 @@
                 "strokeDashoffset","strokeLinecap","strokeLinejoin","strokeMiterlimit","strokeOpacity","strokeWidth",
                 "textAnchor","textRendering", "backgroundOrigin"
             ]
+        }
+    };
+
+    Firecrow.N_Interpreter.CSSStyleDeclarationExecutor =
+    {
+        executeInternalMethod: function(thisObject, functionObject, args, callExpression)
+        {
+            if(!functionObject.isInternalFunction) { CSSStyleDeclaration.notifyError("The function should be internal when css declaration method!"); return; }
+
+            var functionObjectValue = functionObject.jsValue;
+            var thisObjectValue = thisObject.jsValue;
+            var functionName = functionObjectValue.name;
+            var fcThisValue =  thisObject.iValue;
+            var globalObject = fcThisValue.globalObject;
+            var jsArguments =  globalObject.getJsValues(args);
+
+            switch(functionName)
+            {
+                case "getPropertyPriority":
+                case "getPropertyValue":
+                case "item":
+                    var result = thisObjectValue[functionName].apply(thisObjectValue, jsArguments);
+                    return globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, result);
+                case "removeProperty":
+                case "setProperty":
+                default:
+                    CSSStyleDeclaration.notifyError("Unhandled internal method in cssStyleDeclaration:" + functionName);
+                    return;
+            }
         }
     };
 })();

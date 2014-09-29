@@ -1,9 +1,9 @@
 (function()
-{ 
-    var fcInternals = Firecrow.Interpreter.Internals;
+{
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
+    var Attribute;
 
-    fcInternals.Attribute = function(attribute, htmlElement, globalObject, codeConstruct)
+    Firecrow.N_Interpreter.Attribute = Attribute = function(attribute, htmlElement, globalObject, codeConstruct)
     {
         this.initObject(globalObject, codeConstruct, attribute);
 
@@ -38,25 +38,25 @@
             this.addProperty(propertyName, propertyFcValue, codeConstruct);
         };
     };
-    fcInternals.Attribute.notifyError = function(message) { debugger; alert("Attr - " + message); };
+    Attribute.notifyError = function(message) { debugger; alert("Attr - " + message); };
 
-    fcInternals.Attribute.prototype = new fcInternals.Object();
+    Attribute.prototype = new fcInternals.Object();
 
-    fcInternals.Attribute.wrapAttribute = function(attribute, globalObject, codeConstruct)
+    Attribute.wrapAttribute = function(attribute, globalObject, codeConstruct)
     {
         return new fcInternals.fcValue
         (
             attribute,
-            new fcInternals.Attribute(attribute, null, globalObject, codeConstruct),
+            new Attribute(attribute, null, globalObject, codeConstruct),
             codeConstruct
         );
     };
 
-    fcInternals.Attribute.createAttributeList = function(htmlElement, globalObject, codeConstruct)
+    Attribute.createAttributeList = function(htmlElement, globalObject, codeConstruct)
     {
         if(!ValueTypeHelper.isHtmlElement(htmlElement) && !ValueTypeHelper.isDocumentFragment(htmlElement))
         {
-            fcInternals.Attribute.notifyError("Attr - when creating attribute list, the argument has to be an HTMLElement!");
+            Attribute.notifyError("Attr - when creating attribute list, the argument has to be an HTMLElement!");
         }
 
         var attributeList = [];
@@ -71,7 +71,7 @@
                 var fcAttribute = new fcInternals.fcValue
                 (
                     attribute,
-                    new fcInternals.Attribute(attribute, htmlElement, globalObject, codeConstruct),
+                    new Attribute(attribute, htmlElement, globalObject, codeConstruct),
                     codeConstruct
                 );
 
@@ -94,7 +94,7 @@
     };
 
     //https://developer.mozilla.org/en/DOM/element
-    fcInternals.Attribute.CONST =
+    Attribute.CONST =
     {
         INTERNAL_PROPERTIES :
         {

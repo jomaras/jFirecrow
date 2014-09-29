@@ -1,27 +1,30 @@
 (function(){
-    var fcInternals = Firecrow.Interpreter.Internals;
 
-    fcInternals.Boolean = function(value, globalObject, codeConstruct, isLiteral)
+    var Boolean;
+    Firecrow.N_Interpreter.Boolean = Boolean = function(value, globalObject, codeConstruct, isLiteral)
     {
         this.initObject(globalObject, codeConstruct);
 
         this.value = value;
         this.isLiteral = !!isLiteral;
 
+        this.constructor = Boolean;
+
         this.addProperty("__proto__", this.globalObject.fcBooleanPrototype);
     };
 
-    fcInternals.Boolean.prototype = new fcInternals.Object();
-    fcInternals.Boolean.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
+    Boolean.prototype = new Firecrow.N_Interpreter.Object();
+    Boolean.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
     {
         return this.getPropertyValue(propertyName, codeConstruct);
     };
-    fcInternals.Boolean.prototype.isPrimitive = function()
+    Boolean.prototype.isPrimitive = function()
     {
         return this.isLiteral;
     };
 
-    fcInternals.BooleanFunction = function(globalObject)
+    var BooleanFunction;
+    Firecrow.N_Interpreter.BooleanFunction = BooleanFunction = function(globalObject)
     {
         this.initObject(globalObject);
 
@@ -32,14 +35,16 @@
         this.name = "Boolean";
     };
 
-    fcInternals.BooleanFunction.prototype = new fcInternals.Object();
+    BooleanFunction.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcInternals.BooleanPrototype = function(globalObject)
+    var BooleanPrototype;
+    Firecrow.N_Interpreter.BooleanPrototype = BooleanPrototype = function(globalObject)
     {
         this.initObject(globalObject);
-        this.constructor = fcInternals.BooleanPrototype;
+
+        this.constructor = BooleanPrototype;
         this.name = "BooleanPrototype";
     };
 
-    fcInternals.BooleanPrototype.prototype = new fcInternals.Object();
+    BooleanPrototype.prototype = new Firecrow.N_Interpreter.Object();
 })();

@@ -1,9 +1,8 @@
 (function (){
-
-    var fcInternals = Firecrow.Interpreter.Internals;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    fcInternals.Object = function() {};
+    var Object;
+    Firecrow.N_Interpreter.Object = Object = function() {};
 
     fcInternals.Object.createObjectWithInit = function(globalObject, codeConstruct, implementationObject, proto)
     {

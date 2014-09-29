@@ -1,8 +1,7 @@
 (function()
 {
-    var fcInternals = Firecrow.Interpreter.Internals;
-
-    fcInternals.Element = function(globalObject)
+    var Element;
+    Firecrow.N_Interpreter.Element = Element = function(globalObject)
     {
         this.initObject(globalObject);
 
@@ -11,15 +10,16 @@
         this.name = "Element";
     };
 
-    fcInternals.Element.prototype = new fcInternals.Object();
-    fcInternals.Element.notifyError = function(message) { alert("Element - " + message);};
+    Element.prototype = new Firecrow.N_Interpreter.Object();
+    Element.notifyError = function(message) { alert("Element - " + message);};
 
-    fcInternals.ElementPrototype = function(globalObject)
+    var ElementPrototype;
+    Firecrow.N_Interpreter.ElementPrototype = ElementPrototype = function(globalObject)
     {
         this.initObject(globalObject);
-        this.constructor = fcInternals.ElementPrototype;
+        this.constructor = ElementPrototype;
         this.name = "ElementPrototype";
     };
 
-    fcInternals.ElementPrototype.prototype = new fcInternals.Object();
+    ElementPrototype.prototype = new Firecrow.N_Interpreter.Object();
 })();

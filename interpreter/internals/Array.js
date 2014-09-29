@@ -1,14 +1,13 @@
 (function()
 {
-    var fcInternals = Firecrow.Interpreter.Internals;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
-    var ASTHelper = Firecrow.ASTHelper;
+    var Array;
 
-    fcInternals.Array = function (jsArray, globalObject, codeConstruct)
+    Firecrow.N_Interpreter.Array = Array = function (jsArray, globalObject, codeConstruct)
     {
         this.initObject(globalObject, codeConstruct, (this.jsArray = jsArray || []));
 
-        this.constructor = fcInternals.Array;
+        this.constructor = Array;
         this.items = [];
 
         this._addDefaultProperties();
@@ -17,23 +16,23 @@
         this._registerCallbacks();
     };
 
-    fcInternals.Array.notifyError = function (message)
+    Array.notifyError = function (message)
     {
         debugger;
         alert("Array - " + message);
     };
 
-    fcInternals.Array.prototype = new fcInternals.Object();
+    Array.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcInternals.Array.prototype.removePrototypeMethods = function ()
+    Array.prototype.removePrototypeMethods = function ()
     {
-        fcInternals.ArrayPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function (propertyName)
+        Firecrow.N_Interpreter.ArrayPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function (propertyName)
         {
             this.addProperty(propertyName, this.globalObject.internalExecutor.createInternalPrimitiveObject(null, undefined));
         }, this);
     };
 
-    fcInternals.Array.prototype.markAsNodeList = function ()
+    Array.prototype.markAsNodeList = function ()
     {
         this.isNodeList = true;
 
@@ -47,11 +46,11 @@
         this.removePrototypeMethods();
     };
 
-    fcInternals.Array.prototype.push = function (jsArray, args, codeConstruct, fcValue, dontFillJsArray)
+    Array.prototype.push = function (jsArray, args, codeConstruct, fcValue, dontFillJsArray)
     {
         this.addDependenciesToAllProperties(codeConstruct);
 
-        var isCalledOnArray = this.constructor === fcInternals.Array;
+        var isCalledOnArray = this.constructor === Array;
 
         if (args != null && args.isNodeList && this.globalObject.throwsExceptionOnPushWithNodeList)
         {
@@ -105,10 +104,10 @@
         return lengthValue;
     };
 
-    fcInternals.Array.prototype.pop = function (jsArray, args, codeConstruct)
+    Array.prototype.pop = function (jsArray, args, codeConstruct)
     {
         this.addDependenciesToAllProperties(codeConstruct);
-        var isCalledOnArray = this.constructor === fcInternals.Array;
+        var isCalledOnArray = this.constructor == Array;
 
         if (!isCalledOnArray)
         {
@@ -137,11 +136,11 @@
         return poppedItem;
     };
 
-    fcInternals.Array.prototype.reverse = function (jsArray, args, codeConstruct, fcValue)
+    Array.prototype.reverse = function (jsArray, args, codeConstruct, fcValue)
     {
         this.addDependenciesToAllProperties(codeConstruct);
 
-        var isCalledOnArray = this.constructor === fcInternals.Array;
+        var isCalledOnArray = this.constructor == Array;
 
         if (!isCalledOnArray)
         {
@@ -169,11 +168,11 @@
         return fcValue;
     };
 
-    fcInternals.Array.prototype.shift = function (jsArray, args, codeConstruct)
+    Array.prototype.shift = function (jsArray, args, codeConstruct)
     {
         this.addDependenciesToAllProperties(codeConstruct);
 
-        var isCalledOnArray = this.constructor === fcInternals.Array;
+        var isCalledOnArray = this.constructor == Array;
 
         if (!isCalledOnArray)
         {
@@ -211,11 +210,11 @@
         return shiftedItem;
     };
 
-    fcInternals.Array.prototype.unshift = function (jsArray, callArguments, callExpression)
+    Array.prototype.unshift = function (jsArray, callArguments, callExpression)
     {
         this.addDependenciesToAllProperties(callExpression);
 
-        var isCalledOnArray = this.constructor === fcInternals.Array;
+        var isCalledOnArray = this.constructor == Array;
 
         if (!isCalledOnArray) {
             alert("Unshift called on non-array!");
@@ -248,11 +247,11 @@
         return lengthValue;
     };
 
-    fcInternals.Array.prototype.sort = function (jsArray, args, codeConstruct, fcValue)
+    Array.prototype.sort = function (jsArray, args, codeConstruct, fcValue)
     {
         this.addDependenciesToAllProperties(codeConstruct);
 
-        var isCalledOnArray = this.constructor === fcInternals.Array;
+        var isCalledOnArray = this.constructor == Array;
 
         if (!isCalledOnArray) { alert("Sort called on non-array!"); }
 
@@ -274,7 +273,8 @@
         var sortFunction = function (a, b)
         {
             //just sort lexicographically
-            if (a.jsValue == b.jsValue) {
+            if (a.jsValue == b.jsValue)
+            {
                 return 0;
             }
 
@@ -292,15 +292,15 @@
         return fcValue;
     };
 
-    fcInternals.Array.prototype.splice = function (jsArray, args, codeConstruct)
+    Array.prototype.splice = function (jsArray, args, codeConstruct)
     {
         this.addDependenciesToAllProperties(codeConstruct);
 
-        var isCalledOnArray = this.constructor === fcInternals.Array;
+        var isCalledOnArray = this.constructor == Array;
 
         if (!isCalledOnArray)
         {
-            return fcInternals.Array.prototype._spliceOnNonArray.call(this, jsArray, args, codeConstruct);
+            return Array.prototype._spliceOnNonArray.call(this, jsArray, args, codeConstruct);
         }
 
         var lengthProperty = this.getPropertyValue("length");
@@ -315,10 +315,12 @@
 
         for (i = 0; i < args.length; i++)
         {
-            if (i <= 1) {
+            if (i <= 1)
+            {
                 argumentValues.push(args[i].jsValue);
             }
-            else {
+            else
+            {
                 argumentValues.push(args[i]);
             }
         }
@@ -336,7 +338,7 @@
         return this.globalObject.internalExecutor.createArray(codeConstruct, splicedItems);
     };
 
-    fcInternals.Array.prototype._spliceOnNonArray = function (jsArray, args, codeConstruct)
+    Array.prototype._spliceOnNonArray = function (jsArray, args, codeConstruct)
     {
         this.addDependencyToAllModifications(codeConstruct);
         if (jsArray.length != null)
@@ -381,11 +383,11 @@
         return this.globalObject.internalExecutor.createArray(codeConstruct, resultArray);
     };
 
-    fcInternals.Array.prototype.concat = function (jsArray, callArguments, callExpression)
+    Array.prototype.concat = function (jsArray, callArguments, callExpression)
     {
         this.addDependenciesToAllProperties(callExpression);
 
-        var isCalledOnArray = this.constructor === fcInternals.Array || this == this.globalObject.arrayPrototype;
+        var isCalledOnArray = this.constructor == Array || this == this.globalObject.arrayPrototype;
 
         var lengthProperty = this.getPropertyValue("length");
         var length = lengthProperty != null ? lengthProperty.jsValue : 0;
@@ -424,10 +426,10 @@
         return newArray;
     };
 
-    fcInternals.Array.prototype.slice = function (jsArray, callArguments, callExpression)
+    Array.prototype.slice = function (jsArray, callArguments, callExpression)
     {
         this.addDependenciesToAllProperties(callExpression);
-        var isCalledOnArray = this.constructor === fcInternals.Array;
+        var isCalledOnArray = this.constructor == Array;
 
         var lengthProperty = this.getProperty("length");
         var length = lengthProperty != null ? lengthProperty.value.jsValue : 0;
@@ -467,10 +469,10 @@
         );
     };
 
-    fcInternals.Array.prototype.indexOf = function (jsArray, callArguments, callExpression)
+    Array.prototype.indexOf = function (jsArray, callArguments, callExpression)
     {
         this.addDependenciesToAllProperties(callExpression);
-        var isCalledOnArray = this.constructor === fcInternals.Array;
+        var isCalledOnArray = this.constructor == Array;
 
         var lengthProperty = this.getProperty("length");
         var lengthPropertyValue = lengthProperty.value;
@@ -527,10 +529,10 @@
         return this.globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, -1);
     };
 
-    fcInternals.Array.prototype.lastIndexOf = function (jsArray, callArguments, callExpression)
+    Array.prototype.lastIndexOf = function (jsArray, callArguments, callExpression)
     {
         this.addDependenciesToAllProperties(callExpression);
-        var isCalledOnArray = this.constructor === fcInternals.Array;
+        var isCalledOnArray = this.constructor == Array;
 
         if (!isCalledOnArray) { alert("lastIndexOf called on non-array!"); }
 
@@ -551,10 +553,10 @@
         return this.globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, -1);
     };
 
-    fcInternals.Array.prototype.join = function (jsArray, callArguments, callExpression)
+    Array.prototype.join = function (jsArray, callArguments, callExpression)
     {
         this.addDependenciesToAllProperties(callExpression);
-        var isCalledOnArray = this.constructor === fcInternals.Array;
+        var isCalledOnArray = this.constructor == Array;
 
         if (!isCalledOnArray) {
             alert("join called on non-array!");
@@ -575,12 +577,12 @@
         return this.globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, result);
     };
 
-    fcInternals.Array.prototype.getJsPropertyValue = function (propertyName, codeConstruct)
+    Array.prototype.getJsPropertyValue = function (propertyName, codeConstruct)
     {
         return this.getPropertyValue(propertyName, codeConstruct);
     };
 
-    fcInternals.Array.prototype.addJsProperty = function (propertyName, propertyValue, codeConstruct)
+    Array.prototype.addJsProperty = function (propertyName, propertyValue, codeConstruct)
     {
         if (ValueTypeHelper.isInteger(propertyName))
         {
@@ -621,7 +623,7 @@
         }
     };
 
-    fcInternals.Array.prototype._registerCallbacks = function ()
+    Array.prototype._registerCallbacks = function ()
     {
         this.registerGetPropertyCallback(function (getPropertyConstruct)
         {
@@ -644,7 +646,7 @@
         );
     };
 
-    fcInternals.Array.prototype._addDefaultProperties = function ()
+    Array.prototype._addDefaultProperties = function ()
     {
         this.addProperty("length", this.globalObject.internalExecutor.createInternalPrimitiveObject(this.creationCodeConstruct, 0), this.creationCodeConstruct, false);
         this.addProperty("__proto__", this.globalObject.fcArrayPrototype, null, false);
@@ -652,7 +654,7 @@
         this._addRegExResultArrayProperties();
     };
 
-    fcInternals.Array.prototype._addRegExResultArrayProperties = function ()
+    Array.prototype._addRegExResultArrayProperties = function ()
     {
         if (this.jsArray.hasOwnProperty("index"))
         {
@@ -664,32 +666,31 @@
         }
     };
 
-    fcInternals.Array.prototype._addPreexistingObjects = function ()
+    Array.prototype._addPreexistingObjects = function ()
     {
         var dependencyCreator = this.globalObject.dependencyCreator;
 
-        for (var i = 0; i < this.jsArray.length; i++) {
+        for (var i = 0; i < this.jsArray.length; i++)
+        {
             var item = this.jsArray[i];
 
-            if (item === undefined) {
+            if (item === undefined)
+            {
                 item = this.globalObject.internalExecutor.createInternalPrimitiveObject(this.creationCodeConstruct, undefined);
             }
 
             this.push(this.jsArray, item, this.creationCodeConstruct, this, true);
 
-            if (this.jsArray[i] != null && this.jsArray[i].codeConstruct != null) {
+            if (this.jsArray[i] != null && this.jsArray[i].codeConstruct != null)
+            {
                 dependencyCreator.createDataDependency(this.creationCodeConstruct, this.jsArray[i].codeConstruct);
             }
         }
     };
-})();
 
-(function ()
-{
-    var fcInternals = Firecrow.Interpreter.Internals;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    fcInternals.ArrayCallbackEvaluator =
+    Firecrow.N_Interpreter.ArrayCallbackEvaluator =
     {
         evaluateCallbackReturn: function(callbackCommand, returnValue, returnExpression)
         {
@@ -708,7 +709,7 @@
             else if(callbackFunctionValue.name == "every") { this._evaluateEveryCallback(targetObject, returnValue, callbackCommand, valueCodeConstruct); return; }
             else if(callbackFunctionValue.name == "some") { this._evaluateSomeCallback(targetObject, returnValue, callbackCommand, valueCodeConstruct); return; }
             else if(callbackFunctionValue.name == "reduce") { this._evaluateReduceCallback(targetObject, returnValue, callbackCommand, valueCodeConstruct); return; }
-            else if(callbackFunctionValue.name == "reduceRight") { fcInternals.Array.notifyError("Still not handling evaluate return from reduceRight"); return; }
+            else if(callbackFunctionValue.name == "reduceRight") { Array.notifyError("Still not handling evaluate return from reduceRight"); return; }
             else if(callbackFunctionValue.name == "forEach") { }
             else
             {
@@ -721,7 +722,7 @@
         {
             var targetObjectValue = targetObject.jsValue;
 
-            if(!ValueTypeHelper.isArray(targetObjectValue)) { fcInternals.Array.notifyError("A new array should be created when calling filter: "); return; }
+            if(!ValueTypeHelper.isArray(targetObjectValue)) { Array.notifyError("A new array should be created when calling filter: "); return; }
 
             if(returnValue != null && returnValue.jsValue)
             {
@@ -733,7 +734,7 @@
         {
             var targetObjectValue = targetObject.jsValue;
 
-            if(!ValueTypeHelper.isArray(targetObjectValue)) { fcInternals.Array.notifyError("A new array should be created when calling filter: "); return; }
+            if(!ValueTypeHelper.isArray(targetObjectValue)) { Array.notifyError("A new array should be created when calling filter: "); return; }
 
             targetObject.iValue.push(targetObjectValue, [returnValue], valueExpression.argument || valueExpression);
         },
@@ -815,131 +816,121 @@
             arrayFcObject.iValue.addProperty(indexB, arrayFcObject.jsValue[indexB], modificationExpression, true);
         }
     };
-})();
 
-(function()
-{
-    var fcInternals = Firecrow.Interpreter.Internals;
-    var ASTHelper = Firecrow.ASTHelper;
-
-    fcInternals.ArrayExecutor =
+    Firecrow.N_Interpreter.ArrayExecutor =
     {
         executeInternalArrayMethod : function(thisObject, functionObject, args, callExpression, callCommand)
         {
-            try
+            if(!functionObject.isInternalFunction) { Array.notifyError("The function should be internal when executing array method!"); return; }
+
+            var functionObjectValue = functionObject.jsValue;
+            var thisObjectValue = thisObject.jsValue;
+            var functionName = functionObjectValue.name;
+            var fcThisValue =  thisObject.iValue;
+            var globalObject = thisObject.iValue.globalObject;
+
+            var isCalledOnArray = fcThisValue.constructor == Array;
+
+            if(functionName == "reduce" || functionName == "reduceRight")
             {
-                if(!functionObject.isInternalFunction) { fcInternals.Array.notifyError("The function should be internal when executing array method!"); return; }
-
-                var functionObjectValue = functionObject.jsValue;
-                var thisObjectValue = thisObject.jsValue;
-                var functionName = functionObjectValue.name;
-                var fcThisValue =  thisObject.iValue;
-                var globalObject = thisObject.iValue.globalObject;
-
-                var isCalledOnArray = fcThisValue.constructor === fcInternals.Array;
-
-                if(functionName == "reduce" || functionName == "reduceRight")
-                {
-                    if(thisObjectValue.length == 1 && args[1] == null) { return thisObjectValue[0]; }
-                    else if (thisObjectValue.length == 0) { return args[1] || globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, undefined); }
-                }
-
-                switch(functionName)
-                {
-                    case "toString":
-                        var returnValue = isCalledOnArray ? "[object Array]" : "[object Object]";
-                        return globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, returnValue);
-                    case "pop":
-                    case "reverse":
-                    case "shift":
-                    case "push":
-                    case "slice":
-                    case "unshift":
-                    case "splice":
-                        if(callExpression != null && ASTHelper.isMemberExpression(callExpression.callee) && ASTHelper.isIdentifier(callExpression.callee.object))
-                        {
-                            if(!fcThisValue.isDefinedInCurrentContext())
-                            {
-                                globalObject.browser.logModifyingExternalContextObject(fcThisValue.creationCodeConstruct != null ? fcThisValue.creationCodeConstruct.nodeId : -1, callExpression.callee.object.name)
-                            }
-                        }
-                    case "concat":
-                    case "indexOf":
-                    case "lastIndexOf":
-                    case "join":
-                        return fcInternals.Array.prototype[functionName].apply(fcThisValue, [thisObjectValue, args, callExpression, thisObject]);
-                    case "sort":
-                        //If there is no function argument to sort, execute the internal sort method
-                        if(args == null || args.length == 0)
-                        {
-                            return fcInternals.Array.prototype[functionName].apply(fcThisValue, [thisObjectValue, args, callExpression, thisObject]);
-                        }
-                    case "forEach":
-                    case "filter":
-                    case "every":
-                    case "some":
-                    case "map":
-                    case "reduce":
-                        var callbackParams = null;
-
-                        if(callCommand.isCall)
-                        {
-                            callbackParams = callExpression.arguments != null ? callExpression.arguments[1].params : [];
-                        }
-                        else if (callCommand.isApply)
-                        {
-                            //debugger;
-                        }
-                        else
-                        {
-                            callbackParams = callExpression.arguments != null ? callExpression.arguments[0].params : [];
-                        }
-
-                        callCommand.generatesNewCommands = true;
-                        callCommand.generatesCallbacks = true;
-                        callCommand.setCallbackFunction(args[0]);
-                        callCommand.callbackArgumentGroups = this._generateCallbackArguments(thisObject, callbackParams || [], functionName, args, callExpression);
-                        callCommand.thisObject =  args[1] || globalObject;
-                        callCommand.originatingObject = thisObject;
-                        callCommand.callerFunction = functionObject;
-
-                        if(callCommand.originatingObject != null && callCommand.originatingObject.iValue != null && callCommand.originatingObject.iValue.addDependenciesToAllProperties)
-                        {
-                            callCommand.originatingObject.iValue.addDependenciesToAllProperties(callExpression)
-                            if(callCommand.originatingObject.jsValue != null && callCommand.originatingObject.jsValue.length !== null
-                                && callCommand.originatingObject.jsValue.length.jsValue != null)
-                            {
-                                var lengthProperty = callCommand.originatingObject.iValue.getProperty("length");
-
-                                globalObject.internalExecutor.dependencyCreator.createDataDependency
-                                (
-                                    callExpression,
-                                    lengthProperty.lastModificationPosition.codeConstruct,
-                                    globalObject.getPreciseEvaluationPositionId()
-                                )
-                            }
-                        }
-
-                        if(functionName == "filter" || functionName == "map")
-                        {
-                            callCommand.targetObject = globalObject.internalExecutor.createArray(callExpression);
-                            return callCommand.targetObject;
-                        }
-                        else if(functionName == "sort")
-                        {
-                            callCommand.targetObject = thisObject;
-                            return callCommand.targetObject;
-                        }
-                        else
-                        {
-                            return new fcInternals.fcValue(undefined, undefined, callExpression);
-                        }
-                        break;
-                    default:
-                        fcInternals.Array.notifyError("Unknown internal array method: " + functionObjectValue.name);
-                }
+                if(thisObjectValue.length == 1 && args[1] == null) { return thisObjectValue[0]; }
+                else if (thisObjectValue.length == 0) { return args[1] || globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, undefined); }
             }
-            catch(e) { fcInternals.Array.notifyError("Error when executing internal array method: " + e + e.fileName + e.lineNumber); }
+
+            switch(functionName)
+            {
+                case "toString":
+                    var returnValue = isCalledOnArray ? "[object Array]" : "[object Object]";
+                    return globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, returnValue);
+                case "pop":
+                case "reverse":
+                case "shift":
+                case "push":
+                case "slice":
+                case "unshift":
+                case "splice":
+                    if(callExpression != null && ASTHelper.isMemberExpression(callExpression.callee) && ASTHelper.isIdentifier(callExpression.callee.object))
+                    {
+                        if(!fcThisValue.isDefinedInCurrentContext())
+                        {
+                            globalObject.browser.logModifyingExternalContextObject(fcThisValue.creationCodeConstruct != null ? fcThisValue.creationCodeConstruct.nodeId : -1, callExpression.callee.object.name)
+                        }
+                    }
+                case "concat":
+                case "indexOf":
+                case "lastIndexOf":
+                case "join":
+                    return Array.prototype[functionName].apply(fcThisValue, [thisObjectValue, args, callExpression, thisObject]);
+                case "sort":
+                    //If there is no function argument to sort, execute the internal sort method
+                    if(args == null || args.length == 0)
+                    {
+                        return Array.prototype[functionName].apply(fcThisValue, [thisObjectValue, args, callExpression, thisObject]);
+                    }
+                case "forEach":
+                case "filter":
+                case "every":
+                case "some":
+                case "map":
+                case "reduce":
+                    var callbackParams = null;
+
+                    if(callCommand.isCall)
+                    {
+                        callbackParams = callExpression.arguments != null ? callExpression.arguments[1].params : [];
+                    }
+                    else if (callCommand.isApply)
+                    {
+                        //debugger;
+                    }
+                    else
+                    {
+                        callbackParams = callExpression.arguments != null ? callExpression.arguments[0].params : [];
+                    }
+
+                    callCommand.generatesNewCommands = true;
+                    callCommand.generatesCallbacks = true;
+                    callCommand.setCallbackFunction(args[0]);
+                    callCommand.callbackArgumentGroups = this._generateCallbackArguments(thisObject, callbackParams || [], functionName, args, callExpression);
+                    callCommand.thisObject =  args[1] || globalObject;
+                    callCommand.originatingObject = thisObject;
+                    callCommand.callerFunction = functionObject;
+
+                    if(callCommand.originatingObject != null && callCommand.originatingObject.iValue != null && callCommand.originatingObject.iValue.addDependenciesToAllProperties)
+                    {
+                        callCommand.originatingObject.iValue.addDependenciesToAllProperties(callExpression)
+                        if(callCommand.originatingObject.jsValue != null && callCommand.originatingObject.jsValue.length !== null
+                        && callCommand.originatingObject.jsValue.length.jsValue != null)
+                        {
+                            var lengthProperty = callCommand.originatingObject.iValue.getProperty("length");
+
+                            globalObject.internalExecutor.dependencyCreator.createDataDependency
+                            (
+                                callExpression,
+                                lengthProperty.lastModificationPosition.codeConstruct,
+                                globalObject.getPreciseEvaluationPositionId()
+                            )
+                        }
+                    }
+
+                    if(functionName == "filter" || functionName == "map")
+                    {
+                        callCommand.targetObject = globalObject.internalExecutor.createArray(callExpression);
+                        return callCommand.targetObject;
+                    }
+                    else if(functionName == "sort")
+                    {
+                        callCommand.targetObject = thisObject;
+                        return callCommand.targetObject;
+                    }
+                    else
+                    {
+                        return new Firecrow.N_Interpreter.fcValue(undefined, undefined, callExpression);
+                    }
+                    break;
+                default:
+                    Array.notifyError("Unknown internal array method: " + functionObjectValue.name);
+            }
         },
 
         _generateCallbackArguments: function(thisObject, callbackParams, functionName, callArgs, callExpression)
@@ -1012,7 +1003,7 @@
 
         isInternalArrayMethod: function(potentialFunction)
         {
-            var methods = fcInternals.ArrayPrototype.CONST.INTERNAL_PROPERTIES.METHODS;
+            var methods = ArrayPrototype.CONST.INTERNAL_PROPERTIES.METHODS;
 
             for(var i = 0; i < methods.length; i++)
             {
@@ -1025,13 +1016,9 @@
             return false;
         }
     };
-})();
 
-(function()
-{
-    var fcInternals = Firecrow.Interpreter.Internals;
 
-    fcInternals.ArrayFunction = function(globalObject)
+    Firecrow.N_Interpreter.ArrayFunction = function(globalObject)
     {
 
         this.initObject(globalObject);
@@ -1042,7 +1029,7 @@
         this.isInternalFunction = true;
         this.name = "Array";
 
-        fcInternals.ArrayPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        Firecrow.N_Interpreter.ArrayPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
             //Right instanceof reuse HACK - the problem that the second
             //application is executed within the same scope, so they target the same global objects
@@ -1050,7 +1037,7 @@
             this.addProperty
             (
                 propertyName,
-                new fcModel.fcValue
+                new Firecrow.N_Interpreter.fcValue
                 (
                     FBL.Firecrow.INTERNAL_PROTOTYPE_FUNCTIONS.Array[propertyName],
                     fcInternals.Function.createInternalNamedFunction(globalObject, propertyName, this),
@@ -1062,30 +1049,27 @@
         }, this);
     };
 
-    fcInternals.ArrayFunction.prototype = new fcInternals.Object();
-})();
+    Firecrow.N_Interpreter.ArrayFunction.prototype = new Firecrow.N_Interpreter.Object();
 
-(function()
-{
-    var fcInternals = Firecrow.Interpreter.Model;
-
-    fcInternals.ArrayPrototype = function(globalObject)
+    var ArrayPrototype;
+    Firecrow.N_Interpreter.ArrayPrototype = ArrayPrototype = function(globalObject)
     {
         this.initObject(globalObject, null, Array.prototype, globalObject.fcObjectPrototype);
 
-        this.constructor = fcInternals.ArrayPrototype;
+        this.constructor = ArrayPrototype;
         this.name = "ArrayPrototype";
+
         this.addProperty("__proto__", this.globalObject.fcObjectPrototype);
 
-        fcInternals.ArrayPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        ArrayPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
             this.addProperty
             (
                 propertyName,
-                new fcInternals.fcValue
+                new Firecrow.N_Interpreter.fcValue
                 (
                     Array.prototype[propertyName],
-                    fcInternals.Function.createInternalNamedFunction(globalObject, propertyName, this),
+                    Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, propertyName, this),
                     null
                 ),
                 null,
@@ -1094,10 +1078,10 @@
         }, this);
     };
 
-    fcInternals.ArrayPrototype.prototype = new fcInternals.Object();
+    ArrayPrototype.prototype = new fcInternals.Object();
 
     //https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array#Methods_2
-    fcInternals.ArrayPrototype.CONST =
+    ArrayPrototype.CONST =
     {
         INTERNAL_PROPERTIES :
         {

@@ -1,8 +1,7 @@
 (function()
 {
-    var fcInternals = Firecrow.Interpreter.Internals;
-
-    fcInternals.Number = function(value, globalObject, codeConstruct, isLiteral)
+    var Number;
+    Firecrow.N_Interpreter.Number = Number = function(value, globalObject, codeConstruct, isLiteral)
     {
         this.initObject(globalObject, codeConstruct);
 
@@ -12,17 +11,19 @@
         this.addProperty("__proto__", this.globalObject.fcNumberPrototype);
     };
 
-    fcInternals.Number.notifyError = function(message) { alert("Number - " + message); };
-    fcInternals.Number.prototype = new fcInternals.Object();
-    fcInternals.Number.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
+    Number.notifyError = function(message) { alert("Number - " + message); };
+
+    Number.prototype = new Firecrow.N_Interpreter.Object();
+    Number.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
     {
         return this.getPropertyValue(propertyName, codeConstruct);
     };
 
-    fcInternals.NumberFunction = function(globalObject)
+    var NumberFunction;
+    Firecrow.N_Interpreter.NumberFunction = NumberFunction = function(globalObject)
     {
         this.initObject(globalObject, null, Number, globalObject.fcFunctionPrototype);
-        this.constructor = fcInternals.NumberPrototype;
+        this.constructor = NumberPrototype;
 
         this.addProperty("prototype", globalObject.fcNumberPrototype);
         this.proto = globalObject.fcFunctionPrototype;
@@ -39,13 +40,14 @@
         this.addProperty("NaN", this.globalObject.internalExecutor.createInternalPrimitiveObject(null, Number.NaN), null);
     };
 
-    fcInternals.NumberFunction.prototype = new fcInternals.Object();
+    NumberFunction.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcInternals.NumberPrototype = function(globalObject)
+    var NumberPrototype;
+    Firecrow.N_Interpreter.NumberPrototype = function(globalObject)
     {
         this.initObject(globalObject, null, Number.prototype, globalObject.fcObjectPrototype);
         this.name = "NumberPrototype";
     };
 
-    fcInternals.NumberPrototype.prototype = new fcInternals.Object();
+    NumberPrototype.prototype = new Firecrow.N_Interpreter.Object();
 });

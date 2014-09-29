@@ -1,8 +1,6 @@
 (function() {
 /*************************************************************************************/
-    var fcInternals = Firecrow.Interpreter.Internals;
-
-    Firecrow.Interpreter.Model.FunctionFunction = function(globalObject)
+    Firecrow.N_Interpreter.FunctionFunction = function(globalObject)
     {
         this.initObject(globalObject, null, Function, globalObject.fcFunctionPrototype);
 
@@ -12,8 +10,8 @@
         this.name = "Function";
     };
 
-    Firecrow.Interpreter.Model.FunctionFunction.prototype = new fcInternals.Object();
-    Firecrow.Interpreter.Model.FunctionFunction.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
+    Firecrow.N_Interpreter.FunctionFunction.prototype = new Firecrow.N_Interpreter.Object();
+    Firecrow.N_Interpreter.FunctionFunction.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
     {
         return this.getPropertyValue(propertyName, codeConstruct);
     };
