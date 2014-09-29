@@ -1,12 +1,13 @@
 (function() {
     /*************************************************************************************/
-    var ExecutionContextStack = Firecrow.Interpreter.ExecutionContextStack;
-    var Command = Firecrow.Interpreter.Command;
-    var CommandGenerator = Firecrow.Interpreter.CommandGenerator;
+    var ExecutionContextStack = Firecrow.N_Interpreter.ExecutionContextStack;
+    var CommandGenerator = Firecrow.N_Interpreter.CommandGenerator;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
 
-    Firecrow.Interpreter.Interpreter = function(programAst, globalObject, handlerInfo)
+    var Interpreter;
+
+    Firecrow.N_Interpreter.Interpreter = Interpreter = function(programAst, globalObject, handlerInfo)
     {
         this.programAst = programAst;
         this.globalObject = globalObject;
@@ -24,7 +25,7 @@
         this.controlFlowConnectionCallbacks = [];
     };
 
-    Firecrow.Interpreter.Interpreter.prototype =
+    Interpreter.prototype =
     {
         generateEvalCommands: function(callExpression, programAST)
         {
@@ -108,7 +109,7 @@
 
         _processGeneratingNewCommandsCommand: function(command)
         {
-            if (command.isEvalCallbackFunctionCommand()) { this._generateCommandsAfterCallbackFunctionCommand(command); }
+                 if (command.isEvalCallbackFunctionCommand()) { this._generateCommandsAfterCallbackFunctionCommand(command); }
             else if (command.isEvalNewExpressionCommand()) { this._generateCommandsAfterNewExpressionCommand(command); }
             else if (command.isEvalCallExpressionCommand()) { this._generateCommandsAfterCallFunctionCommand(command); }
             else if (command.isCallInternalFunctionCommand()) { if(command.generatesCallbacks) { this._generateCommandsAfterCallbackFunctionCommand(command); this.globalObject.browser.logStartExecutingCallbacks(command.callbackFunction != null && command.callbackFunction.codeConstruct); }}
@@ -117,17 +118,17 @@
             else if (command.isEvalConditionalExpressionBodyCommand()) { this._generateCommandsAfterConditionalCommand(command); }
             else if (command.isCaseCommand()) { this._generateCommandsAfterCaseCommand(command); }
             else if (command.isConvertToPrimitiveCommand()) { this._generateCommandsAfterConvertToPrimitiveCommand(command); }
-            else { fcSimulator.notifyError("Unknown generating new commands command!"); }
+            else { Interpreter.notifyError("Unknown generating new commands command!"); }
         },
 
         _processRemovingCommandsCommand: function(command)
         {
-            if (command.isEvalReturnExpressionCommand()) { this._removeCommandsAfterReturnStatement(command); }
+                 if (command.isEvalReturnExpressionCommand()) { this._removeCommandsAfterReturnStatement(command); }
             else if (command.isEvalBreakCommand()) { this._removeCommandsAfterBreak(command); }
             else if (command.isEvalContinueCommand()) { this._removeCommandsAfterContinue(command); }
             else if (command.isEvalThrowExpressionCommand()) { this._removeCommandsAfterException(command); }
             else if (command.isEvalLogicalExpressionItemCommand()) { this._removeCommandsAfterLogicalExpressionItem(command); }
-            else { fcSimulator.notifyError("Unknown removing commands command: " + command.type); }
+            else { Interpreter.notifyError("Unknown removing commands command: " + command.type); }
         },
 
         _processTryCommand: function(command)
@@ -140,7 +141,7 @@
             {
                 this._removeTryCommandFromStack(command);
             }
-            else { fcSimulator.notifyError("Unknown command type when processing try command"); }
+            else { Interpreter.notifyError("Unknown command type when processing try command"); }
         },
 
         _removeTryCommandFromStack: function(command)
@@ -154,7 +155,7 @@
             else if (topCommand == null || topCommand.codeConstruct != command.codeConstruct)
             {
                 debugger;
-                fcSimulator.notifyError("No top command to remove from stack!");
+                Interpreter.notifyError("No top command to remove from stack!");
             }
         },
 
@@ -321,15 +322,15 @@
         _removeCommandsAfterException: function(exceptionGeneratingArgument)
         {
             if(exceptionGeneratingArgument == null ||
-                !(exceptionGeneratingArgument.isDomStringException || exceptionGeneratingArgument.isPushExpectedException
-                    || (ValueTypeHelper.isOfType(exceptionGeneratingArgument, Firecrow.Interpreter.Commands.Command) && exceptionGeneratingArgument.isEvalThrowExpressionCommand())))
+             !(exceptionGeneratingArgument.isDomStringException || exceptionGeneratingArgument.isPushExpectedException
+           || (ValueTypeHelper.isOfType(exceptionGeneratingArgument, Firecrow.N_Interpreter.Command) && exceptionGeneratingArgument.isEvalThrowExpressionCommand())))
             {
                 debugger;
-                fcSimulator.notifyError
+                Interpreter.notifyError
                 (
                         "Exception generating error at:" + " - "
                         + this.commands[this.currentCommandIndex].codeConstruct.loc.start.line + ": "
-                        + FBL.Firecrow.CodeTextGenerator.generateJsCode(this.commands[this.currentCommandIndex].codeConstruct)
+                        + Firecrow.CodeTextGenerator.generateJsCode(this.commands[this.currentCommandIndex].codeConstruct)
                         + "Call Stack: " + this.executionContextStack.getStackLines()
                 );
             }
@@ -337,7 +338,7 @@
             if(this.tryStack.length == 0)
             {
                 debugger;
-                fcSimulator.notifyError("Removing commands and there is no enclosing try catch block @ " + this.commands[this.currentCommandIndex].codeConstruct.loc.source);
+                Interpreter.notifyError("Removing commands and there is no enclosing try catch block @ " + this.commands[this.currentCommandIndex].codeConstruct.loc.source);
                 return;
             }
 
@@ -405,7 +406,7 @@
             (
                 this.commands,
                 CommandGenerator.generateCallbackFunctionExecutionCommands(callInternalFunctionCommand),
-                    this.currentCommandIndex + 1
+                this.currentCommandIndex + 1
             );
         },
 
@@ -426,7 +427,7 @@
             (
                 this.commands,
                 CommandGenerator.generateFunctionExecutionCommands(newCommand, callee, newObject),
-                    this.currentCommandIndex + 1
+                this.currentCommandIndex + 1
             );
         },
 
@@ -458,7 +459,7 @@
             (
                 this.commands,
                 CommandGenerator.generateFunctionExecutionCommands(callExpressionCommand, callFunction, baseObject),
-                    this.currentCommandIndex + 1
+                this.currentCommandIndex + 1
             );
         },
 
@@ -474,7 +475,7 @@
                     loopCommand,
                     !loopCommand.isEvalForInWhereCommand() ? this.executionContextStack.getExpressionValue(loopCommand.codeConstruct.test).jsValue : null
                 ),
-                    this.currentCommandIndex + 1
+                this.currentCommandIndex + 1
             );
         },
 
@@ -484,16 +485,12 @@
 
             var generatedCommands = CommandGenerator.generateIfStatementBodyCommands(ifCommand, ifConditionValue.jsValue, ifCommand.parentFunctionCommand);
 
-            this.globalObject.browser.addPathConstraint(ifCommand.codeConstruct, ifConditionValue.symbolicValue, !ifConditionValue.jsValue);
-
             ValueTypeHelper.insertElementsIntoArrayAtIndex(this.commands, generatedCommands, this.currentCommandIndex + 1);
         },
 
         _generateCommandsAfterConditionalCommand: function(conditionalCommand)
         {
             var conditionValue = this.executionContextStack.getExpressionValue(conditionalCommand.codeConstruct.test);
-
-            this.globalObject.browser.addPathConstraint(conditionalCommand.codeConstruct, conditionValue.symbolicValue, !conditionValue.jsValue);
 
             ValueTypeHelper.insertElementsIntoArrayAtIndex
             (
@@ -503,7 +500,7 @@
                     conditionalCommand,
                     conditionValue.jsValue
                 ),
-                    this.currentCommandIndex + 1
+                this.currentCommandIndex + 1
             );
         },
 
@@ -513,25 +510,14 @@
             var caseValue = caseCommand.codeConstruct.test != null ? this.executionContextStack.getExpressionValue(caseCommand.codeConstruct.test)
                 : null;
 
-            var pathConstraint = fcSymbolic.SymbolicExecutor.evalSwitchCase(caseValue, switchDiscriminantValue);
-
             if(caseCommand.codeConstruct.test == null //is default
-                || caseCommand.parent.hasBeenMatched //falls through
-                || caseValue.jsValue == switchDiscriminantValue.jsValue)
+            || caseCommand.parent.hasBeenMatched //falls through
+            || caseValue.jsValue == switchDiscriminantValue.jsValue)
             {
-                if(!caseCommand.parent.hasBeenMatched) //On first matching case - add path
-                {
-                    this.globalObject.browser.addPathConstraint(caseCommand.parent, pathConstraint);
-                }
-
                 caseCommand.parent.hasBeenMatched = true;
                 caseCommand.parent.matchedCaseCommand = caseCommand;
 
                 ValueTypeHelper.insertElementsIntoArrayAtIndex(this.commands, CommandGenerator.generateCaseExecutionCommands(caseCommand), this.currentCommandIndex + 1);
-            }
-            else //will not generate case commands - add inverted path constraint
-            {
-                this.globalObject.browser.addPathConstraint(caseCommand.parent, pathConstraint, true);
             }
         },
 
@@ -553,26 +539,8 @@
             (
                 this.commands,
                 CommandGenerator.generateFunctionExecutionCommands(convertToPrimitiveCommand, valueOfFunction, expressionValue),
-                    this.currentCommandIndex + 1
+                this.currentCommandIndex + 1
             );
-        },
-
-        registerMessageGeneratedCallback: function(callbackFunction, thisValue)
-        {
-            this.messageGeneratedCallbacks.push
-            ({
-                callback: callbackFunction,
-                thisValue: thisValue || this
-            });
-        },
-
-        registerControlFlowConnectionCallback: function(calleeFunction, thisValue)
-        {
-            this.controlFlowConnectionCallbacks.push
-            ({
-                callback: calleeFunction,
-                thisValue: thisValue || this
-            });
         }
     };
     /******************************************************************************************/

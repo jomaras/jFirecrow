@@ -94,28 +94,24 @@
 
     N_Interpreter.ExecutionContextStack = function(globalObject, handlerInfo)
     {
-        try
-        {
-            if(globalObject == null) { this.notifyError("GlobalObject can not be null when constructing execution context stack!"); return; }
+        if(globalObject == null) { this.notifyError("GlobalObject can not be null when constructing execution context stack!"); return; }
 
-            this.globalObject = globalObject;
-            this.globalObject.executionContextStack = this;
+        this.globalObject = globalObject;
+        this.globalObject.executionContextStack = this;
 
-            this.activeContext = null;
-            this.stack = [];
+        this.activeContext = null;
+        this.stack = [];
 
-            this.exceptionCallbacks = [];
-            this.blockCommandStack = [];
-            this.functionContextCommandsStack = [{functionContextBlockCommandsEvalPositions:[]}];
+        this.exceptionCallbacks = [];
+        this.blockCommandStack = [];
+        this.functionContextCommandsStack = [{functionContextBlockCommandsEvalPositions:[]}];
 
-            this.dependencyCreator = new N_Interpreter.DependencyCreator(globalObject, this);
+        this.dependencyCreator = new N_Interpreter.DependencyCreator(globalObject, this);
 
-            this.evaluator = new N_Interpreter.Evaluator(this);
-            this.evaluator.registerExceptionCallback(this._exceptionCallback, this);
+        this.evaluator = new N_Interpreter.Evaluator(this);
+        this.evaluator.registerExceptionCallback(this._exceptionCallback, this);
 
-            this._enterInitialContext(handlerInfo);
-        }
-        catch(e) { debugger; this.notifyError("Error when constructing executionContextStack: " + e); }
+        this._enterInitialContext(handlerInfo);
     };
 
     N_Interpreter.ExecutionContextStack.prototype =
@@ -151,104 +147,95 @@
 
         executeCommand: function(command)
         {
-            try
+            if(!command.isEnterFunctionContextCommand()) { this.activeContext.lastCommand = command; }
+
+            if (command.isEnterFunctionContextCommand())
             {
-                if(!command.isEnterFunctionContextCommand()) { this.activeContext.lastCommand = command; }
-                this.globalObject.browser.logConstructExecuted(command.codeConstruct);
-
-                if (command.isEnterFunctionContextCommand())
-                {
-                    this.functionContextCommandsStack.push(command);
-                    command.functionContextBlockCommandsEvalPositions = [];
-                    this._addToBlockCommandStack(command);
-                    this._enterFunctionContext(command);
-                }
-                else if (command.isExitFunctionContextCommand())
-                {
-                    this._exitFunctionContext(command);
-                    this._popTillLastFunctionContextCommand(command);
-                    this.functionContextCommandsStack.pop();
-                }
-                else if (command.isStartWithStatementCommand())
-                {
-                    this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct.object);
-                    this._addToBlockCommandStack(command);
-                    this._evalStartWithCommand(command);
-                }
-                else if(command.isStartDoWhileCommand())
-                {
-                    this._addToBlockCommandStack(command);
-                }
-                else if (command.isEndWithStatementCommand()) { this._tryPopCommand(command); this._evalEndWithCommand(command); }
-                else if (command.isForStatementCommand() || command.isWhileStatementCommand() ||  command.isDoWhileStatementCommand())
-                {
-                    this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct.test);
-                    this._addToBlockCommandStack(command);
-                }
-                else if (command.isForUpdateStatementCommand()){}
-                else if (command.isIfStatementCommand())
-                {
-                    this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct.test);
-                    //this.globalObject.browser.callControlFlowProblematicReachedCallbacks(command.codeConstruct.test);
-                    this._addToBlockCommandStack(command);
-                }
-                else if (command.isEndIfCommand()) { this._tryPopCommand(command);}
-                else if (command.isEndLoopStatementCommand()) { this._popLoop(command);}
-                else if (command.isEvalConditionalExpressionBodyCommand()) { }
-                else if (command.isEvalConditionalExpressionCommand()) { this._addToBlockCommandStack(command); }
-                else if (command.isEvalBreakCommand() || command.isEvalContinueCommand())
-                {
-                    if(this.activeContext.id == 4582) {debugger; }
-                    this.evaluator.evalBreakContinueCommand(command );
-                    //if(command.id == 293413) debugger;
-                    this._popTillBreakContinue(command.codeConstruct);
-                }
-                else if (command.isStartSwitchStatementCommand()) { this._addToBlockCommandStack(command); }
-                else if (command.isEndSwitchStatementCommand()) { this._tryPopCommand(command);}
-                else if (command.isCaseCommand()) {}
-                else if (command.isStartTryStatementCommand() || command.isEndTryStatementCommand()) { }
-                else if (command.isEvalNewExpressionCommand()){ this.dependencyCreator.addNewExpressionDependencies(command.codeConstruct);}
-                else if (command.isStartLogicalExpressionCommand()) { }
-                else if (command.isCallInternalConstructorCommand()) { this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct); }
-                else if (command.isCallCallbackMethodCommand()) {}
-                else if (command.isEvalCallExpressionCommand())
-                {
-                    this.dependencyCreator.addCallExpressionDependencies(command.codeConstruct);
-                    this.globalObject.browser.callExpressionEvaluatedCallbacks(command.codeConstruct.callee);
-                }
-                else if (command.isExecuteCallbackCommand()) { this.dependencyCreator.addCallbackDependencies(command.codeConstruct, command.callCallbackCommand.codeConstruct); }
-                else if (command.isLabelCommand()) { this._logLabelCommand(command) ;}
-                else if (command.isConvertToPrimitiveCommand()) {}
-                else if (command.isStartEvalCommand()) { this._addToBlockCommandStack(command); }
-                else
-                {
-                    if (command.isEndEvalConditionalExpressionCommand()) { this._tryPopCommand(command); }
-                    else if (command.isStartCatchStatementCommand()) { this._addToBlockCommandStack(command); }
-                    else if (command.isEndCatchStatementCommand()) { this._tryPopCommand(command);}
-                    else if(command.isEvalForInWhereCommand())
-                    {
-                        this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct.right);
-                        this._addToBlockCommandStack(command);
-                    }
-                    else if (command.isEndLogicalExpressionCommand())
-                    {
-                        if(ASTHelper.isAssignmentExpression(command.codeConstruct.parent))
-                        {
-                            this._addToFunctionContextBlockCommands(command);
-                        }
-                    }
-                    else if(command.isFinishEvalCommand())
-                    {
-                        this._tryPopCommand(command);
-                    }
-
-                    this.evaluator.evaluateCommand(command);
-                }
+                this.functionContextCommandsStack.push(command);
+                command.functionContextBlockCommandsEvalPositions = [];
+                this._addToBlockCommandStack(command);
+                this._enterFunctionContext(command);
             }
-            catch(e)
+            else if (command.isExitFunctionContextCommand())
             {
-                debugger;
-                this.notifyError("Error when executing command: " + e);
+                this._exitFunctionContext(command);
+                this._popTillLastFunctionContextCommand(command);
+                this.functionContextCommandsStack.pop();
+            }
+            else if (command.isStartWithStatementCommand())
+            {
+                this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct.object);
+                this._addToBlockCommandStack(command);
+                this._evalStartWithCommand(command);
+            }
+            else if(command.isStartDoWhileCommand())
+            {
+                this._addToBlockCommandStack(command);
+            }
+            else if (command.isEndWithStatementCommand()) { this._tryPopCommand(command); this._evalEndWithCommand(command); }
+            else if (command.isForStatementCommand() || command.isWhileStatementCommand() ||  command.isDoWhileStatementCommand())
+            {
+                this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct.test);
+                this._addToBlockCommandStack(command);
+            }
+            else if (command.isForUpdateStatementCommand()){}
+            else if (command.isIfStatementCommand())
+            {
+                this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct.test);
+                //this.globalObject.browser.callControlFlowProblematicReachedCallbacks(command.codeConstruct.test);
+                this._addToBlockCommandStack(command);
+            }
+            else if (command.isEndIfCommand()) { this._tryPopCommand(command);}
+            else if (command.isEndLoopStatementCommand()) { this._popLoop(command);}
+            else if (command.isEvalConditionalExpressionBodyCommand()) { }
+            else if (command.isEvalConditionalExpressionCommand()) { this._addToBlockCommandStack(command); }
+            else if (command.isEvalBreakCommand() || command.isEvalContinueCommand())
+            {
+                if(this.activeContext.id == 4582) {debugger; }
+                this.evaluator.evalBreakContinueCommand(command );
+                //if(command.id == 293413) debugger;
+                this._popTillBreakContinue(command.codeConstruct);
+            }
+            else if (command.isStartSwitchStatementCommand()) { this._addToBlockCommandStack(command); }
+            else if (command.isEndSwitchStatementCommand()) { this._tryPopCommand(command);}
+            else if (command.isCaseCommand()) {}
+            else if (command.isStartTryStatementCommand() || command.isEndTryStatementCommand()) { }
+            else if (command.isEvalNewExpressionCommand()){ this.dependencyCreator.addNewExpressionDependencies(command.codeConstruct);}
+            else if (command.isStartLogicalExpressionCommand()) { }
+            else if (command.isCallInternalConstructorCommand()) { this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct); }
+            else if (command.isCallCallbackMethodCommand()) {}
+            else if (command.isEvalCallExpressionCommand())
+            {
+                this.dependencyCreator.addCallExpressionDependencies(command.codeConstruct);
+                this.globalObject.browser.callExpressionEvaluatedCallbacks(command.codeConstruct.callee);
+            }
+            else if (command.isExecuteCallbackCommand()) { this.dependencyCreator.addCallbackDependencies(command.codeConstruct, command.callCallbackCommand.codeConstruct); }
+            else if (command.isLabelCommand()) { this._logLabelCommand(command) ;}
+            else if (command.isConvertToPrimitiveCommand()) {}
+            else if (command.isStartEvalCommand()) { this._addToBlockCommandStack(command); }
+            else
+            {
+                if (command.isEndEvalConditionalExpressionCommand()) { this._tryPopCommand(command); }
+                else if (command.isStartCatchStatementCommand()) { this._addToBlockCommandStack(command); }
+                else if (command.isEndCatchStatementCommand()) { this._tryPopCommand(command);}
+                else if(command.isEvalForInWhereCommand())
+                {
+                    this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct.right);
+                    this._addToBlockCommandStack(command);
+                }
+                else if (command.isEndLogicalExpressionCommand())
+                {
+                    if(ASTHelper.isAssignmentExpression(command.codeConstruct.parent))
+                    {
+                        this._addToFunctionContextBlockCommands(command);
+                    }
+                }
+                else if(command.isFinishEvalCommand())
+                {
+                    this._tryPopCommand(command);
+                }
+
+                this.evaluator.evaluateCommand(command);
             }
         },
 

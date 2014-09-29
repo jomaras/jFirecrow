@@ -30,42 +30,6 @@
         isHtmlNode: function() { return this.isNodeOfType("html"); },
         isCssNode: function() { return this.isNodeOfType("css"); },
         isJsNode: function() { return this.isNodeOfType("js"); },
-        isResourceNode: function() { return this.isNodeOfType("resource"); },
-
-        getSimplified: function()
-        {
-            //if(this.model.nodeId == 378) debugger;
-            return {
-                modelId : this.model != null ? this.model.nodeId : -1,
-                type: this.type,
-                isDynamic: this.isDynamic ? 1 : undefined,
-                dataDependencies: this._getSimplifiedDependencies(this.dataDependencies),
-                reverseDependencies: this._getSimplifiedDependencies(this.reverseDependencies)
-            };
-        },
-
-        _getSimplifiedDependencies: function(dependencies, isReverseDependencies)
-        {
-            var simplifiedDependencies = [];
-            var simplifiedDependenciesMap = {};
-
-            for(var i = 0; i < dependencies.length; i++)
-            {
-                var dependency = dependencies[i];
-
-                if(!dependency.isValueDependency) { continue; }
-
-                var edgeSignature = dependency.getEdgeSignature();
-
-                if(!simplifiedDependenciesMap[edgeSignature])
-                {
-                    simplifiedDependencies.push(dependency.getSimplified());
-                    simplifiedDependenciesMap[edgeSignature] = true;
-                }
-            }
-
-            return simplifiedDependencies;
-        },
 
         addStructuralDependency: function(destinationNode, isDynamic)
         {

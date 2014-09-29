@@ -8,34 +8,30 @@
     {
         generateCommands: function(program)
         {
-            try
-            {
-                var executionCommands = [];
-                var declarationCommands = [];
+            var executionCommands = [];
+            var declarationCommands = [];
 
-                ASTHelper.traverseDirectSourceElements
-                (
-                    program,
-                    function(sourceElement)
-                    {
-                        ValueTypeHelper.pushAll(declarationCommands, CommandGenerator.generateDeclarationCommands(sourceElement));
-                    },
-                    true
-                );
+            ASTHelper.traverseDirectSourceElements
+            (
+                program,
+                function(sourceElement)
+                {
+                    ValueTypeHelper.pushAll(declarationCommands, CommandGenerator.generateDeclarationCommands(sourceElement));
+                },
+                true
+            );
 
-                ASTHelper.traverseDirectSourceElements
-                (
-                    program,
-                    function(sourceElement)
-                    {
-                        ValueTypeHelper.pushAll(executionCommands, CommandGenerator.generateExecutionCommands(sourceElement, null));
-                    },
-                    false
-                );
+            ASTHelper.traverseDirectSourceElements
+            (
+                program,
+                function(sourceElement)
+                {
+                    ValueTypeHelper.pushAll(executionCommands, CommandGenerator.generateExecutionCommands(sourceElement, null));
+                },
+                false
+            );
 
-                return ValueTypeHelper.concatArray(declarationCommands, executionCommands);
-            }
-            catch(e) { this.notifyError("Error while generating commands: " + e);}
+            return ValueTypeHelper.concatArray(declarationCommands, executionCommands);
         },
 
         generateEvalCommands: function(callExpression, programAST)
@@ -384,66 +380,59 @@
 
         generateFunctionExecutionCommands: function(callExpressionCommand, functionObject, thisObject)
         {
-            try
+            var commands = [];
+
+            if(functionObject == null) { this.notifyError("function object can not be null when generating commands for function execution!"); return commands; }
+
+            if(functionObject.isInternalFunction && !callExpressionCommand.isCall && !callExpressionCommand.isApply)
             {
-                var commands = [];
-
-                if(functionObject == null) { this.notifyError("function object can not be null when generating commands for function execution!"); return commands; }
-
-                if(functionObject.isInternalFunction && !callExpressionCommand.isCall && !callExpressionCommand.isApply)
-                {
-                    return this._generateInternalFunctionExecutionCommands(callExpressionCommand, functionObject, thisObject);
-                }
-                else if(functionObject.isInternalFunction && (callExpressionCommand.isCall || callExpressionCommand.isApply))
-                {
-                    return this._generateInternalFunctionExecutionCallApplyCommands(callExpressionCommand, functionObject, thisObject);
-                }
-
-                var enterFunctionContextCommand = Command.createEnterFunctionContextCommand(functionObject, thisObject, callExpressionCommand);
-                var exitFunctionContextCommand = Command.createExitFunctionContextCommand(functionObject, callExpressionCommand);
-
-                commands.push(enterFunctionContextCommand);
-                callExpressionCommand.exitFunctionContextCommand = exitFunctionContextCommand;
-                exitFunctionContextCommand.callExpressionCommand = callExpressionCommand;
-
-                var functionConstruct = functionObject.codeConstruct;
-
-                ASTHelper.traverseDirectSourceElements
-                (
-                    functionConstruct.body,
-                    function(sourceElement)
-                    {
-                        ValueTypeHelper.pushAll
-                        (
-                            commands,
-                            CommandGenerator.generateDeclarationCommands(sourceElement, callExpressionCommand)
-                        );
-                    },
-                    true
-                );
-
-                ASTHelper.traverseDirectSourceElements
-                (
-                    functionConstruct.body,
-                    function(sourceElement)
-                    {
-                        ValueTypeHelper.pushAll
-                        (
-                            commands,
-                            CommandGenerator.generateExecutionCommands(sourceElement, callExpressionCommand)
-                        );
-                    },
-                    false
-                );
-
-                commands.push(exitFunctionContextCommand);
-
-                return commands;
+                return this._generateInternalFunctionExecutionCommands(callExpressionCommand, functionObject, thisObject);
             }
-            catch (e)
+            else if(functionObject.isInternalFunction && (callExpressionCommand.isCall || callExpressionCommand.isApply))
             {
-                this.notifyError("An error occurred when generating function execution commands: " + e + " " + callExpressionCommand.codeConstruct.loc.source);
+                return this._generateInternalFunctionExecutionCallApplyCommands(callExpressionCommand, functionObject, thisObject);
             }
+
+            var enterFunctionContextCommand = Command.createEnterFunctionContextCommand(functionObject, thisObject, callExpressionCommand);
+            var exitFunctionContextCommand = Command.createExitFunctionContextCommand(functionObject, callExpressionCommand);
+
+            commands.push(enterFunctionContextCommand);
+            callExpressionCommand.exitFunctionContextCommand = exitFunctionContextCommand;
+            exitFunctionContextCommand.callExpressionCommand = callExpressionCommand;
+
+            var functionConstruct = functionObject.codeConstruct;
+
+            ASTHelper.traverseDirectSourceElements
+            (
+                functionConstruct.body,
+                function(sourceElement)
+                {
+                    ValueTypeHelper.pushAll
+                    (
+                        commands,
+                        CommandGenerator.generateDeclarationCommands(sourceElement, callExpressionCommand)
+                    );
+                },
+                true
+            );
+
+            ASTHelper.traverseDirectSourceElements
+            (
+                functionConstruct.body,
+                function(sourceElement)
+                {
+                    ValueTypeHelper.pushAll
+                    (
+                        commands,
+                        CommandGenerator.generateExecutionCommands(sourceElement, callExpressionCommand)
+                    );
+                },
+                false
+            );
+
+            commands.push(exitFunctionContextCommand);
+
+            return commands;
         },
 
         _generateInternalFunctionExecutionCommands: function(callExpressionCommand, functionObject, thisObject)
@@ -641,15 +630,11 @@
 
         generateLoopExecutionCommands: function(loopStatementCommand, evaldCondition)
         {
-            try
-            {
-                     if (loopStatementCommand.isForStatementCommand()) { return this.generateForBodyExecutionCommands(loopStatementCommand, evaldCondition); }
-                else if (loopStatementCommand.isDoWhileStatementCommand()) { return this.generateDoWhileBodyExecutionCommands(loopStatementCommand, evaldCondition); }
-                else if (loopStatementCommand.isWhileStatementCommand()) { return this.generateWhileBodyExecutionCommands(loopStatementCommand, evaldCondition); }
-                else if (loopStatementCommand.isEvalForInWhereCommand()) { return this.generateForInBodyExecutionCommands(loopStatementCommand, evaldCondition); }
-                else { this.notifyError("Unknown loop statement!"); }
-            }
-            catch(e) { this.notifyError("Error when generating loop execution commands: " + e); }
+                 if (loopStatementCommand.isForStatementCommand()) { return this.generateForBodyExecutionCommands(loopStatementCommand, evaldCondition); }
+            else if (loopStatementCommand.isDoWhileStatementCommand()) { return this.generateDoWhileBodyExecutionCommands(loopStatementCommand, evaldCondition); }
+            else if (loopStatementCommand.isWhileStatementCommand()) { return this.generateWhileBodyExecutionCommands(loopStatementCommand, evaldCondition); }
+            else if (loopStatementCommand.isEvalForInWhereCommand()) { return this.generateForInBodyExecutionCommands(loopStatementCommand, evaldCondition); }
+            else { this.notifyError("Unknown loop statement!"); }
         },
 
         generateWhileBodyExecutionCommands: function(whileStatementCommand, evaldCondition)

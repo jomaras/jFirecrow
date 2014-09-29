@@ -2,22 +2,22 @@
     /*************************************************************************************/
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
-    var fcSimulator = Firecrow.Interpreter.Simulator;
-    var fcModel = Firecrow.Interpreter.Model;
 
-    fcSimulator.VariableObject = function(executionContext)
+    var VariableObject;
+
+    Firecrow.N_Interpreter.VariableObject = function(executionContext)
     {
         this.executionContext = executionContext;
         this.identifiers = [];
     };
 
-    fcSimulator.VariableObject.notifyError = function(message) { alert("VariableObject - " + message); };
+    VariableObject.notifyError = function(message) { alert("VariableObject - " + message); };
 
-    fcSimulator.VariableObject.prototype =
+    VariableObject.prototype =
     {
         registerIdentifier: function(identifier)
         {
-            if(!ValueTypeHelper.isOfType(identifier, fcModel.Identifier)) { fcSimulator.VariableObject.notifyError("When registering an identifier has to be passed"); return; }
+            if(!ValueTypeHelper.isOfType(identifier, fcModel.Identifier)) { VariableObject.notifyError("When registering an identifier has to be passed"); return; }
 
             var existingIdentifier = this.getIdentifier(identifier.name);
 
@@ -73,7 +73,7 @@
     };
 
 
-    fcSimulator.VariableObjectMixin =
+    Firecrow.N_Interpreter.VariableObjectMixin =
     {
         getIdentifier: function(identifierName) { return this.iValue.getProperty(identifierName); },
 
@@ -107,30 +107,26 @@
     };
 
 
-    fcSimulator.VariableObject.createFunctionVariableObject = function(functionIdentifier, formalParameters, calleeFunction, sentArguments, callCommand, globalObject)
+    VariableObject.createFunctionVariableObject = function(functionIdentifier, formalParameters, calleeFunction, sentArguments, callCommand, globalObject)
     {
-        try
-        {
-            var functionVariableObject = new fcSimulator.VariableObject(null);
+        var functionVariableObject = new VariableObject(null);
 
-            functionVariableObject.functionIdentifier = functionIdentifier;
-            functionVariableObject.formalParameters = formalParameters;
-            functionVariableObject.calleeFunction = calleeFunction;
-            functionVariableObject.sentArguments = sentArguments;
+        functionVariableObject.functionIdentifier = functionIdentifier;
+        functionVariableObject.formalParameters = formalParameters;
+        functionVariableObject.calleeFunction = calleeFunction;
+        functionVariableObject.sentArguments = sentArguments;
 
-            var callConstruct = callCommand != null ? callCommand.codeConstruct : null;
+        var callConstruct = callCommand != null ? callCommand.codeConstruct : null;
 
-            this._registerArgumentsVariable(functionVariableObject, callConstruct, sentArguments, globalObject);
+        this._registerArgumentsVariable(functionVariableObject, callConstruct, sentArguments, globalObject);
 
-            if(functionIdentifier != null) { functionVariableObject.registerIdentifier(functionIdentifier); }
-            if(formalParameters != null) { this._registerFormalParameters(formalParameters, functionVariableObject, sentArguments, this._getArgumentsConstructs(callCommand, callConstruct, sentArguments));}
+        if(functionIdentifier != null) { functionVariableObject.registerIdentifier(functionIdentifier); }
+        if(formalParameters != null) { this._registerFormalParameters(formalParameters, functionVariableObject, sentArguments, this._getArgumentsConstructs(callCommand, callConstruct, sentArguments));}
 
-            return functionVariableObject;
-        }
-        catch(e) { fcSimulator.VariableObject.notifyError("Error while creating function variable object: " + e + " " + e.fileName + " " + e.lineNumber); }
+        return functionVariableObject;
     };
 
-    fcSimulator.VariableObject._registerArgumentsVariable = function(functionVariableObject, callConstruct, sentArguments, globalObject)
+    VariableObject._registerArgumentsVariable = function(functionVariableObject, callConstruct, sentArguments, globalObject)
     {
         var argumentsValue = globalObject.internalExecutor.createNonConstructorObject(callConstruct);
 
@@ -150,17 +146,17 @@
 
         functionVariableObject.registerIdentifier
         (
-            new fcModel.Identifier
+            new Firecrow.N_Interpreter.Identifier
             (
                 "arguments",
                 argumentsValue,
-                    callConstruct != null ? callConstruct.arguments : null,
+                callConstruct != null ? callConstruct.arguments : null,
                 globalObject
             )
         );
     };
 
-    fcSimulator.VariableObject._getArgumentsConstructs = function(callCommand, callConstruct, sentArguments)
+    VariableObject._getArgumentsConstructs = function(callCommand, callConstruct, sentArguments)
     {
         var argumentsConstruct = callConstruct != null ? callConstruct.arguments : [];
 
@@ -186,7 +182,7 @@
         return argumentsConstruct || [];
     };
 
-    fcSimulator.VariableObject._registerFormalParameters = function(formalParameters, functionVariableObject, sentArguments, argumentConstructs)
+    VariableObject._registerFormalParameters = function(formalParameters, functionVariableObject, sentArguments, argumentConstructs)
     {
         if(sentArguments == null) { debugger; }
 
@@ -204,11 +200,11 @@
         }
     };
 
-    fcSimulator.VariableObject.liftToVariableObject = function(object)
+    VariableObject.liftToVariableObject = function(object)
     {
-        if(object == null || object.iValue == null) { fcSimulator.VariableObject.notifyError("Can not lift object to variable object:"); };
+        if(object == null || object.iValue == null) { VariableObject.notifyError("Can not lift object to variable object:"); };
 
-        ValueTypeHelper.expand(object, fcSimulator.VariableObjectMixin);
+        ValueTypeHelper.expand(object, Firecrow.N_Interpreter.VariableObjectMixin);
 
         return object;
     };

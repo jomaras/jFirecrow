@@ -264,7 +264,8 @@
             return false;
         },
 
-        deepClone: function (object) {
+        deepClone: function (object)
+        {
             try {
                 return JSON.parse(JSON.stringify(object));
             }
@@ -404,28 +405,21 @@
             return array;
         },
 
-        removeFromArrayByElement: function (array, element) {
-            try {
-                return this.removeFromArrayByIndex(array, array.indexOf(element));
-            }
-            catch (e) {
-                alert("Error while removing elements from array by element: " + e);
-            }
+        removeFromArrayByElement: function (array, element)
+        {
+            return this.removeFromArrayByIndex(array, array.indexOf(element));
         },
 
-        removeFromArrayByIndex: function (array, index) {
-            try {
-                if (index < 0 || index >= array.length) {
-                    debugger;
-                    alert("Index out of range when removing array in ValueTypeHelper");
-                    return;
-                }
+        removeFromArrayByIndex: function (array, index)
+        {
+            if (index < 0 || index >= array.length)
+            {
+                debugger;
+                alert("Index out of range when removing array in ValueTypeHelper");
+                return;
+            }
 
-                return array.splice(index, 1);
-            }
-            catch (e) {
-                alert("Error while removing elements from array by index: " + e);
-            }
+            return array.splice(index, 1);
         },
 
         getArraysIntersection: function (firstArray, secondArray) {
@@ -457,40 +451,28 @@
             return baseString.substr(0, position) + insertionString + baseString.substr(position);
         },
 
-        insertIntoArrayAtIndex: function (array, element, index) {
-            try {
-                array.splice(index, 0, element);
-            }
-            catch (e) {
-                alert("Error occured when inserting into array in ValueTypeHelper:" + e);
-            }
+        insertIntoArrayAtIndex: function (array, element, index)
+        {
+            array.splice(index, 0, element);
         },
 
-        insertElementsIntoArrayAtIndex: function (array, elements, index) {
-            try {
-                elements.forEach(function (element) {
-                    this.insertIntoArrayAtIndex(array, element, index++);
-                }, this);
-            }
-            catch (e) {
-                alert("Error when inserting elements into array: " + e);
-            }
+        insertElementsIntoArrayAtIndex: function (array, elements, index)
+        {
+            elements.forEach(function (element)
+            {
+                this.insertIntoArrayAtIndex(array, element, index++);
+            }, this);
         },
 
-        createArrayCopy: function (array) {
-            try {
-                if (array == null) {
-                    return [];
-                }
+        createArrayCopy: function (array)
+        {
+            if (array == null) { return []; }
 
-                return array.slice();
-            }
-            catch (e) {
-                alert("Error when Creating array copy - ValueTypeHelper:" + e);
-            }
+            return array.slice();
         },
 
-        concatArray: function (firstArray, secondArray) {
+        concatArray: function (firstArray, secondArray)
+        {
             if (firstArray == null) {
                 return secondArray;
             }
@@ -510,31 +492,24 @@
             return joinedArray;
         },
 
-        pushAll: function (baseArray, arrayWithItems) {
-            try {
-                baseArray.push.apply(baseArray, arrayWithItems);
-            }
-            catch (e) {
-                alert("Error while pushing all in ValueTypeHelper:" + e);
-            }
+        pushAll: function (baseArray, arrayWithItems)
+        {
+            baseArray.push.apply(baseArray, arrayWithItems);
         },
 
-        findInArray: function (array, searchForItem, checkFunction) {
-            try {
-                for (var i = 0; i < array.length; i++) {
-                    var currentItem = array[i];
+        findInArray: function (array, searchForItem, checkFunction)
+        {
+            for (var i = 0; i < array.length; i++)
+            {
+                var currentItem = array[i];
 
-                    if (checkFunction(currentItem, searchForItem)) {
-                        return currentItem;
-                    }
+                if (checkFunction(currentItem, searchForItem))
+                {
+                    return currentItem;
                 }
+            }
 
-                return null;
-            }
-            catch (e) {
-                debugger;
-                alert("ValueTypeHelper - Error while finding in array: " + e);
-            }
+            return null;
         },
 
         clearArray: function (array) {

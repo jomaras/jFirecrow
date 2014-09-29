@@ -2,77 +2,47 @@
     /*************************************************************************************/
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
-    var Node = Firecrow.DependencyGraph.Node;
 
-    var Interpreter = Firecrow.Interpreter.InterpreterSimulator;
-    var GlobalObject = Firecrow.Interpreter.Model.GlobalObject;
-
-    var fcSimulator = Firecrow.Interpreter.Simulator;
-    var fcModel = Firecrow.Interpreter.Model;
-    var fcBrowser = Firecrow.DoppelBrowser;
-
-    fcBrowser.Browser = function(pageModel)
+    var Browser;
+    Firecrow.Browser = Browser = function(pageModel)
     {
-        this.id = fcBrowser.Browser.LAST_USED_ID++;
+        this.id = Browser.LAST_USED_ID++;
         this.pageModel = pageModel;
         this.hostDocument = Firecrow.getDocument();
         this._clearHostDocument();
         this.htmlWebFile = pageModel;
 
-        this.globalObject = new GlobalObject(this, this.hostDocument);
-
-        this.nodeCreatedCallbacks = [];
-        this.nodeInsertedCallbacks = [];
-        this.interpretJsCallbacks = [];
-        this.expressionEvaluatedCallbackInfo = { callback: function(){}, thisObject: this};
-        this.controlFlowProblematicCallbacks = [];
-
-        this.dataDependencyEstablishedCallbacks = [];
-        this.controlDependencyEstablishedCallbacks = [];
-        this.interpreterMessageGeneratedCallbacks = [];
-        this.controlFlowConnectionCallbacks = [];
-        this.importantConstructReachedCallbacks = [];
-        this.documentReadyCallbacks = [];
-        this.enterFunctionCallbacks = [];
-        this.exitFunctionCallbacks = [];
-        this.callbackCalledCallbacks = [];
-        this.startedExecutingCallbackCallbacks = [];
-        this.stoppedExecutingCallbackCallbacks = [];
-        this.breakContinueReturnEventsCallbacks = [];
+        this.globalObject = new Firecrow.N_Interpreter.GlobalObject(this, this.hostDocument);
+        this.dependencyGraph = new Firecrow.N_DependencyGraph.Graph();
 
         this.domQueriesMap = {};
         this.dynamicIdMap = {};
         this.dynamicClassMap = {};
 
-        this.errorMessages = [];
         this.cssRules = [];
-
-        this.executionInfo = new fcBrowser.ExecutionInfo();
 
         this.loadingEventsExecuted = false;
 
-        this._matchesSelector = Element.prototype.matchesSelector || Element.prototype.mozMatchesSelector || Element.prototype.webkitMatchesSelector;
+        this._matchesSelector = Element.prototype.matchesSelector || Element.prototype.mozMatchesSelector
+                             || Element.prototype.webkitMatchesSelector;
 
-        if(!Firecrow.IsDebugMode)
+        if(!Firecrow.isDebugMode)
         {
-            Firecrow.DependencyGraph.Node.LAST_ID = 0;
-            Firecrow.Interpreter.Model.fcValue.LAST_ID = 0;
-            Firecrow.Interpreter.Commands.Command.LAST_COMMAND_ID = 0;
-            Firecrow.Interpreter.Model.Identifier.LAST_ID = 0;
-            Firecrow.Interpreter.Model.Object.LAST_ID = 0;
+            Firecrow.N_DependencyGraph.Node.LAST_ID = 0;
+            Firecrow.N_Interpreter.fcValue.LAST_ID = 0;
+            Firecrow.N_Interpreter.Command.LAST_COMMAND_ID = 0;
+            Firecrow.N_Interpreter.Identifier.LAST_ID = 0;
+            Firecrow.N_Interpreter.Object.LAST_ID = 0;
         }
     };
 
-    fcBrowser.Browser.notifyError = function(message) { debugger; alert("Browser - " + message); };
-    fcBrowser.Browser.LAST_USED_ID = 0;
-
-    var Browser = Firecrow.Browser;
+    Browser.notifyError = function(message) { debugger; alert("Browser - " + message); };
+    Browser.LAST_USED_ID = 0;
 
     Browser.prototype =
     {
         evaluatePage: function()
         {
-            Firecrow.Interpreter.InterpreterSimulator.noOfEvaluatedExpressions = 0;
             this._buildSubtree(this.pageModel.htmlElement, null);
             this._handleEvents();
         },
@@ -156,8 +126,8 @@
         getEventRegistrations: function()
         {
             return this.globalObject.timeoutHandlers.concat(this.globalObject.intervalHandlers)
-                .concat(this.globalObject.htmlElementEventHandlingRegistrations)
-                .concat(this.globalObject.ajaxHandlers);
+                       .concat(this.globalObject.htmlElementEventHandlingRegistrations)
+                       .concat(this.globalObject.ajaxHandlers);
         },
 
         setLoadingEventsExecuted: function()
@@ -230,7 +200,6 @@
         {
             this._buildJavaScriptNodes(htmlModelElement);
             this._interpretJsCode(htmlModelElement.pathAndModel.model, null);
-            this._callInterpretJsCallbacks(htmlModelElement.pathAndModel.model);
         },
 
         _isScriptNode: function(htmlModelElement)
@@ -257,19 +226,8 @@
             {
                 var attribute = attributes[i];
 
-                try
-                {
-                    htmlDomElement[attribute.name] = attribute.value;
-                    htmlDomElement.setAttribute(attribute.name, attribute.value);
-                }
-                catch(e) { debugger; }
-
-                if(attribute.name == "src" && htmlModelElement.type == "img")
-                {
-                    var absoluteUrl = Firecrow.UriHelper.getAbsoluteUrl(attribute.value, this.url);
-                    htmlDomElement.setAttribute(attribute.name, absoluteUrl);
-                    attribute.value = absoluteUrl;
-                }
+                htmlDomElement[attribute.name] = attribute.value;
+                htmlDomElement.setAttribute(attribute.name, attribute.value);
             }
         },
 
@@ -301,12 +259,12 @@
 
             htmlDomElement.modelElement = htmlModelNode;
 
-            if(fcBrowser.Browser.isForSlicing)
+            if(Browser.isForSlicing)
             {
                 htmlModelNode.domElement = htmlDomElement;
             }
 
-            this.callNodeCreatedCallbacks(htmlModelNode, "html", false);
+            this.dependencyGraph.handleNodeCreated(htmlModelNode, "html", false);
 
             return htmlDomElement;
         },
@@ -331,10 +289,11 @@
             if(!this.interpreter) { return; }
 
             var that = this;
+
             ASTHelper.traverseAst(codeModel, function(currentNode, nodeName, parentNode)
             {
-                that.callNodeCreatedCallbacks(currentNode, "js", false);
-                that._callNodeInsertedCallbacks(currentNode, ASTHelper.isProgram(parentNode) ? callExpression : parentNode);
+                that.dependencyGraph.handleNodeCreated(currentNode, "js", false);
+                that.dependencyGraph.handleNodeInserted(currentNode, ASTHelper.isProgram(parentNode) ? callExpression : parentNode);
             });
 
             this.interpreter.generateEvalCommands(callExpression, codeModel);
@@ -346,284 +305,44 @@
 
         _interpretJsCode: function(codeModel, handlerInfo)
         {
-            try
-            {
-                this.interpreter = new Interpreter(codeModel, this.globalObject, handlerInfo);
+            this.interpreter = new Firecrow.N_Interpreter.Interpreter(codeModel, this.globalObject, handlerInfo);
 
-                this.globalObject.dependencyCreator = new fcSimulator.DependencyCreator(this.globalObject, this.interpreter.executionContextStack);
+            this.globalObject.dependencyCreator = new Firecrow.N_Interpreter.DependencyCreator(this.globalObject, this.interpreter.executionContextStack);
 
-                this.interpreter.registerMessageGeneratedCallback(function(message)
-                {
-                    this._callInterpreterMessageGeneratedCallbacks(message);
-                }, this);
+            this.interpreter.runSync();
+            this.interpreter.destruct();
+            delete this.interpreter;
+            this.interpreter = null;
 
-                this.interpreter.registerControlFlowConnectionCallback(function(codeConstruct)
-                {
-                    this._callControlFlowConnectionCallbacks(codeConstruct);
-                }, this);
-
-                this.interpreter.runSync();
-                this.interpreter.destruct();
-                delete this.interpreter;
-                this.interpreter = null;
-
-                this.globalObject.registerPreRegisteredAjaxEvents();
-            }
-            catch(e)
-            {
-                this.notifyError("DoppelBrowser.browser error when interpreting js code: " + e + "@" + e.fileName + " " + e.lineNumber);
-            }
-        },
-
-        getExecutionInfo: function()
-        {
-            return this.executionInfo;
-        },
-
-        getSimplifiedUndefinedGlobalPropertiesAccessMap: function()
-        {
-            var simplified = {};
-
-            var map = this.getUndefinedGlobalPropertiesAccessMap();
-
-            for(var varName in map)
-            {
-                simplified[varName] = {};
-
-                for(var constructId in map[varName])
-                {
-                    simplified[varName][constructId] = {nodeId: constructId };
-                }
-            }
-
-            return simplified;
-        },
-
-        getUndefinedGlobalPropertiesAccessMap: function()
-        {
-            var map = {};
-
-            var itemMap = this.executionInfo.undefinedGlobalPropertiesAccessMap;
-
-            for(var propertyName in itemMap)
-            {
-                if(propertyName == "") { continue; }
-
-                if(map[propertyName] == null)
-                {
-                    map[propertyName] = itemMap[propertyName];
-                }
-                else
-                {
-                    var expanderObject = itemMap[propertyName];
-                    var expandedObject = map[propertyName];
-
-                    for(var codeConstructId in expanderObject)
-                    {
-                        expandedObject[codeConstructId] = expanderObject[codeConstructId];
-                    }
-                }
-            }
-
-            return map;
-        },
-
-        getSimplifiedResourceSetterMap: function()
-        {
-            var resourceSetterMap = this.getResourceSetterMap();
-            var simplified = {};
-
-            for(var nodeId in resourceSetterMap)
-            {
-                simplified[nodeId] =
-                {
-                    resourceValue: resourceSetterMap[nodeId].resourceValue,
-                    codeConstructId: nodeId
-                };
-            }
-
-            return simplified;
-        },
-
-        getInternalPrototypeExtensions: function()
-        {
-            var prototypes = this.globalObject.internalPrototypes;
-            var prototypeExtensions = {};
-
-            for(var i = 0; i < prototypes.length; i++)
-            {
-                var prototype = prototypes[i];
-                var userDefinedProperties = prototype.getUserDefinedProperties();
-
-                if(userDefinedProperties.length == 0) { continue; }
-
-                prototypeExtensions[prototype.name] = [];
-
-                for(var j = 0; j < userDefinedProperties.length; j++)
-                {
-                    var property = userDefinedProperties[j]
-                    prototypeExtensions[prototype.name].push
-                    ({
-                        name: property.name,
-                        codeConstructId: property.declarationPosition != null && property.declarationPosition.codeConstruct != null
-                            ? property.declarationPosition.codeConstruct.nodeId
-                            : -1
-                    });
-                }
-            }
-
-            return prototypeExtensions;
-        },
-
-        getResourceSetterMap: function()
-        {
-            var map = {};
-
-            var itemMap = this.executionInfo.resourceSetterPropertiesMap;
-
-            for(var propName in itemMap)
-            {
-                map[propName] = itemMap[propName];
-            }
-
-            return map;
+            this.globalObject.registerPreRegisteredAjaxEvents();
         },
 
         logStartExecutingCallbacks: function(codeConstruct)
         {
-            for(var i = 0; i < this.startedExecutingCallbackCallbacks.length; i++)
-            {
-                var callbackObject = this.startedExecutingCallbackCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, codeConstruct);
-            }
+            this.dependencyGraph.handleCallbackStartedExecuting(codeConstruct);
         },
 
         logEndExecutingCallbacks: function(codeConstruct)
         {
-
-            for(var i = 0; i < this.stoppedExecutingCallbackCallbacks.length; i++)
-            {
-                var callbackObject = this.stoppedExecutingCallbackCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, codeConstruct);
-            }
+            this.dependencyGraph.handleCallbackStoppedExecuting(codeConstruct);
         },
 
         logEnteringFunction: function(callExpression, functionConstruct, executionContextId)
         {
-            if(functionConstruct != null)
-            {
-                this.executionInfo.logEnteringFunction(functionConstruct, executionContextId);
-            }
-
-            this.callEnterFunctionCallbacks(callExpression, functionConstruct, executionContextId);
+            this.dependencyGraph.handleEnterFunction(callExpression, functionConstruct, executionContextId);
         },
 
         logExitingFunction: function()
         {
-            this.callExitFunctionCallbacks();
-        },
-
-        logConstructExecuted: function(codeConstruct)
-        {
-            if(codeConstruct == null || codeConstruct.type == null) { return; }
-
-            codeConstruct.hasBeenExecuted = true;
-            this.executionInfo.logExecutedConstruct(codeConstruct);
-
-            var parentStatementOrFunction = ASTHelper.getParentStatementOrFunction(codeConstruct);
-            if(parentStatementOrFunction != null)
-            {
-                parentStatementOrFunction.hasBeenExecuted = true;
-                this.executionInfo.logExecutedConstruct(parentStatementOrFunction);
-            }
-        },
-
-        getSimplifiedForInIterations: function()
-        {
-            var forInIterations = this.executionInfo.objectForInIterations;
-            var simplified = {};
-
-            for(var i = 0; i < forInIterations.length; i++)
-            {
-                var forInIteration = forInIterations[i];
-
-                if(simplified[forInIteration.codeConstruct.nodeId] == null)
-                {
-                    simplified[forInIteration.codeConstruct.nodeId] = { codeConstructId: forInIteration.codeConstruct.nodeId, prototypes:{}};
-                }
-
-                var internalPrototypes = forInIteration.proto.iValue.getInternalPrototypeChain();
-
-                for(var j = 0; j < internalPrototypes.length; j++)
-                {
-                    simplified[forInIteration.codeConstruct.nodeId].prototypes[internalPrototypes[j].name] = 1;
-                }
-            }
-
-            return simplified;
-        },
-
-        getForInIterationsLog: function()
-        {
-            return this.executionInfo.objectForInIterations;
-        },
-
-        logAccessingUndefinedProperty: function(propertyName, codeConstruct)
-        {
-            this.executionInfo.logAccessingUndefinedProperty(propertyName, codeConstruct);
-        },
-
-        logAccessingSizeProperty: function(propertyName, codeConstruct)
-        {
-            this.executionInfo.logAccessingSizeProperty(propertyName, codeConstruct);
-        },
-
-        logResourceSetting: function(codeConstruct, resourcePath)
-        {
-            this.executionInfo.logResourceSetting(codeConstruct, resourcePath);
-        },
-
-        logForInIteration: function(codeConstruct, objectPrototype)
-        {
-            this.executionInfo.logForInIteration(codeConstruct, objectPrototype);
-        },
-
-        logModifyingExternalContextIdentifier: function(identifier)
-        {
-            this.executionInfo.logModifyingExternalContextIdentifier(identifier);
-        },
-
-        logReadingIdentifierOutsideCurrentScope: function(identifier, codeConstruct)
-        {
-            this.executionInfo.logReadingIdentifierOutsideCurrentScope(identifier, codeConstruct);
-        },
-
-        logReadingObjectPropertyOutsideCurrentScope: function(creationConstructId, propertyName, codeConstruct)
-        {
-            this.executionInfo.logReadingObjectPropertyOutsideCurrentScope(creationConstructId, propertyName, codeConstruct);
-        },
-
-        logModifyingExternalContextObject: function(objectCreationConstructId, propertyName)
-        {
-            this.executionInfo.logModifyingExternalContextObject(objectCreationConstructId, propertyName);
-        },
-
-        addPathConstraint: function(codeConstruct, constraint, inverse)
-        {
-            this.executionInfo.addConstraint(codeConstruct, constraint, inverse);
-        },
-
-        simpleDependencyEstablished: function(fromConstruct, toConstruct)
-        {
-            this.executionInfo.logDependencies(fromConstruct, toConstruct);
+            this.dependencyGraph.handleExitFunction();
         },
 
         _insertIntoDom: function(htmlDomElement, parentDomElement)
         {
             if (htmlDomElement.tagName != null
-                &&(htmlDomElement.tagName.toLowerCase() == "html"
-                    || htmlDomElement.tagName.toLowerCase() == "head"
-                    || htmlDomElement.tagName.toLowerCase() == "body"))
+             &&(htmlDomElement.tagName.toLowerCase() == "html"
+             || htmlDomElement.tagName.toLowerCase() == "head"
+             || htmlDomElement.tagName.toLowerCase() == "body"))
             {
                 return;
             }
@@ -635,23 +354,27 @@
             }
 
             parentDomElement == null ? this.hostDocument.appendChild(htmlDomElement)
-                : parentDomElement.appendChild(htmlDomElement);
+                                     : parentDomElement.appendChild(htmlDomElement);
 
-            this._callNodeInsertedCallbacks(htmlDomElement.modelElement, parentDomElement != null ? parentDomElement.modelElement : null);
+            this.dependencyGraph.handleNodeInserted(htmlDomElement.modelElement, parentDomElement != null ? parentDomElement.modelElement : null);
         },
 
         _buildCssNodes: function(cssHtmlElementModelNode)
         {
             cssHtmlElementModelNode.cssRules = cssHtmlElementModelNode.pathAndModel.model.rules;
+
             var cssText = "";
+
             for(var i = 0; i < cssHtmlElementModelNode.cssRules.length; i++)
             {
                 var cssRule = cssHtmlElementModelNode.cssRules[i];
                 cssRule.hasBeenExecuted = true;
-                this.callNodeCreatedCallbacks(cssRule, "css", false);
-                this._callNodeInsertedCallbacks(cssRule, cssHtmlElementModelNode);
+
                 cssText += cssRule.cssText;
                 this.cssRules.push(cssRule);
+
+                this.dependencyGraph.handleNodeCreated(cssRule, "css", false);
+                this.dependencyGraph.handleNodeInserted(cssRule, cssHtmlElementModelNode);
             }
 
             if(this._isExternalStyleLink(cssHtmlElementModelNode))
@@ -675,7 +398,7 @@
 
                 if(this.matchesSelector(htmlModelNode.domElement, cssRule.selector))
                 {
-                    this.callDataDependencyEstablishedCallbacks(htmlModelNode, cssRule, this.globalObject.getPreciseEvaluationPositionId(), null, null, true);
+                    this.dependencyGraph.handleDataDependencyEstablished(htmlModelNode, cssRule, this.globalObject.getPreciseEvaluationPositionId(), null, null, true);
                 }
             }
         },
@@ -683,8 +406,8 @@
         matchesSelector: function(htmlElement, selector)
         {
             if(htmlElement == null || this._matchesSelector == null || selector == null
-                || ValueTypeHelper.isDocumentFragment(htmlElement) || ValueTypeHelper.isTextNode(htmlElement)
-                || ValueTypeHelper.isDocument(htmlElement)) { return false; }
+            || ValueTypeHelper.isDocumentFragment(htmlElement) || ValueTypeHelper.isTextNode(htmlElement)
+            || ValueTypeHelper.isDocument(htmlElement)) { return false; }
 
             if(selector.indexOf(":hover") != -1 || selector.indexOf(":active") != -1)
             {
@@ -704,16 +427,12 @@
 
         _buildJavaScriptNodes: function(scriptHtmlElementModelNode)
         {
-            try
+            var that = this;
+            ASTHelper.traverseAst(scriptHtmlElementModelNode.pathAndModel.model, function(currentNode, nodeName, parentNode)
             {
-                var that = this;
-                ASTHelper.traverseAst(scriptHtmlElementModelNode.pathAndModel.model, function(currentNode, nodeName, parentNode)
-                {
-                    that.callNodeCreatedCallbacks(currentNode, "js", false);
-                    that._callNodeInsertedCallbacks(currentNode, ASTHelper.isProgram(parentNode) ? scriptHtmlElementModelNode : parentNode);
-                });
-            }
-            catch(e) { this.notifyError("DoppelBrowser.browser error when building js nodes: " + e); }
+                that.dependencyGraph.handleNodeCreated(currentNode, "js", false);
+                that.dependencyGraph.handleNodeInserted(currentNode, ASTHelper.isProgram(parentNode) ? scriptHtmlElementModelNode : parentNode);
+            });
         },
 
         _isExecutionWithinHandler: function(eventTrace, handlerConstruct)
@@ -742,60 +461,53 @@
 
         _handleEvents: function()
         {
-            try
+            console.log("Started handling events");
+
+            if(this.pageModel.eventTraces == null) { return; }
+
+            this.globalObject.document.addProperty("readyState", new fcModel.fcValue("complete", null, null));
+
+            var eventTraces = this.pageModel.eventTraces;
+
+            var domContentReadyMethods = this.globalObject.getDOMContentLoadedHandlers();
+            var onLoadFunctions = this.globalObject.getOnLoadFunctions();
+
+            var htmlElementEvents = this.globalObject.htmlElementEventHandlingRegistrations;
+            var timeoutEvents = this.globalObject.timeoutHandlers;
+            var intervalEvents = this.globalObject.intervalHandlers;
+
+            for(var i = 0, length = eventTraces.length; i < length; i++)
             {
-                console.log("Started handling events");
+                var eventTrace = eventTraces[i];
+                this._adjustCurrentInputStates(eventTrace.args.currentInputStates);
+                var eventFile = eventTrace.filePath;
+                this.globalObject.currentEventTime = eventTrace.currentTime;
 
-                if(this.pageModel.eventTraces == null) { return; }
+                if(eventTrace.args.type == "focus") continue;
+                if(eventTrace.args.type == "unload" && i == 0) continue;
 
-                this.globalObject.document.addProperty("readyState", new fcModel.fcValue("complete", null, null));
-
-                var eventTraces = this.pageModel.eventTraces;
-
-                var domContentReadyMethods = this.globalObject.getDOMContentLoadedHandlers();
-                var onLoadFunctions = this.globalObject.getOnLoadFunctions();
-
-                var htmlElementEvents = this.globalObject.htmlElementEventHandlingRegistrations;
-                var timeoutEvents = this.globalObject.timeoutHandlers;
-                var intervalEvents = this.globalObject.intervalHandlers;
-
-                for(var i = 0, length = eventTraces.length; i < length; i++)
+                if(this._isBrowserGeneratedEvent(eventTrace))
                 {
-                    var eventTrace = eventTraces[i];
-                    this._adjustCurrentInputStates(eventTrace.args.currentInputStates);
-                    var eventFile = eventTrace.filePath;
-                    this.globalObject.currentEventTime = eventTrace.currentTime;
-
-                    if(eventTrace.args.type == "focus") continue;
-                    if(eventTrace.args.type == "unload" && i == 0) continue;
-
-                    if(this._isBrowserGeneratedEvent(eventTrace))
-                    {
-                        if(this._handleDomContentReadyMethods(domContentReadyMethods, eventTrace)) { continue; }
-                        if(this._handleOnLoadMethod(onLoadFunctions, eventTrace)) { continue; }
-                        if(this._handleTimingEvents(intervalEvents, timeoutEvents, eventTrace)) { continue; }
-                    }
-                    else
-                    {
-                        this._handleHtmlEvents(htmlElementEvents, eventTrace);
-                    }
-
-                    if(!eventTrace.hasBeenHandled)
-                    {
-                        console.log(eventTrace.args.type + "@" + eventTrace.line + " not handled!");
-                    }
-                    else
-                    {
-                        console.log(eventTrace.args.type + "@" + eventTrace.line + " handled!");
-                    }
+                    if(this._handleDomContentReadyMethods(domContentReadyMethods, eventTrace)) { continue; }
+                    if(this._handleOnLoadMethod(onLoadFunctions, eventTrace)) { continue; }
+                    if(this._handleTimingEvents(intervalEvents, timeoutEvents, eventTrace)) { continue; }
+                }
+                else
+                {
+                    this._handleHtmlEvents(htmlElementEvents, eventTrace);
                 }
 
-                console.log("Events handled");
+                if(!eventTrace.hasBeenHandled)
+                {
+                    console.log(eventTrace.args.type + "@" + eventTrace.line + " not handled!");
+                }
+                else
+                {
+                    console.log(eventTrace.args.type + "@" + eventTrace.line + " handled!");
+                }
             }
-            catch(e)
-            {
-                this.notifyError("Error when handling events: " + e + this.url + e.fileName +  e.lineNumber );
-            }
+
+            console.log("Events handled");
         },
 
         _handleDomContentReadyMethods: function(domContentReadyMethods, eventTrace)
@@ -938,7 +650,7 @@
 
             if(event != null)
             {
-                var eventThisObject = new fcModel.fcValue(event.fcHtmlElement.htmlElement, event.fcHtmlElement, null);
+                var eventThisObject = new Firecrow.N_Interpreter.fcValue(event.fcHtmlElement.htmlElement, event.fcHtmlElement, null);
                 var handlerConstruct = event.handler.codeConstruct;
 
                 this._interpretJsCode
@@ -969,12 +681,12 @@
                     if(allowAncestors)
                     {
                         if(!this._isElementOrAncestor(fcHtmlElement.htmlElement, targetElement)
-                            && !this._isElementOrAncestor(fcHtmlElement.htmlElement, thisElement)) { continue; }
+                        && !this._isElementOrAncestor(fcHtmlElement.htmlElement, thisElement)) { continue; }
                     }
                     else
                     {
                         if(fcHtmlElement.htmlElement != targetElement
-                            && fcHtmlElement.htmlElement != thisElement) { continue; }
+                        && fcHtmlElement.htmlElement != thisElement) { continue; }
                     }
                 }
 
@@ -1016,250 +728,15 @@
             }
         },
 
-        registerNodeCreatedCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - node created callback has to be a function!"); return; }
-
-            this.nodeCreatedCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerNodeInsertedCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - node inserted callback has to be a function!"); return; }
-
-            this.nodeInsertedCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerInterpretJsCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - interpret js callback has to be a function!"); return; }
-
-            this.interpretJsCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerExpressionEvaluatedCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - expression evaluated callback has to be a function!"); return; }
-
-            this.expressionEvaluatedCallbackInfo = {callback: callback, thisObject: thisObject || this};
-        },
-
-        registerControlFlowProblematicExpressionReachedCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - control flow problematic callback has to be a function!"); return; }
-
-            this.controlFlowProblematicCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerInterpreterMessageGeneratedCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - interpreter message generated callback has to be a function!"); return; }
-
-            this.interpreterMessageGeneratedCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerInterpretJsCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - interpret js callback has to be a function!"); return; }
-
-            this.interpretJsCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerControlFlowConnectionCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - control flow connection callback has to be a function!"); return; }
-
-            this.controlFlowConnectionCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerControlDependencyEstablishedCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - control dependency established callback has to be a function!"); return; }
-
-            this.controlDependencyEstablishedCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerDataDependencyEstablishedCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - data dependency established callback has to be a function!"); return; }
-
-            this.dataDependencyEstablishedCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerImportantConstructReachedCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - important construct reached callback has to be a function!"); return; }
-
-            this.importantConstructReachedCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerBreakContinueReturnEventReached: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - break continue return event construct reached callback has to be a function!"); return; }
-
-            this.breakContinueReturnEventsCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerDocumentReadyCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - important document ready callback has to be a function!"); return; }
-
-            this.documentReadyCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerEnterFunctionCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - enter function callback has to be a function!"); return; }
-
-            this.enterFunctionCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerExitFunctionCallback: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - enter function callback has to be a function!"); return; }
-
-            this.exitFunctionCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerCallbackCalled: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - enter function callback has to be a function!"); return; }
-
-            this.callbackCalledCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerCallbackStartedExecuting: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - enter function callback has to be a function!"); return; }
-
-            this.startedExecutingCallbackCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        registerCallbackStoppedExecuting: function(callback, thisObject)
-        {
-            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError("DoppelBrowser.Browser - enter function callback has to be a function!"); return; }
-
-            this.stoppedExecutingCallbackCallbacks.push({callback: callback, thisObject: thisObject || this});
-        },
-
-        _callDocumentReadyCallbacks: function()
-        {
-            for(var i = 0; i < this.documentReadyCallbacks.length; i++)
-            {
-                var callbackObject = this.documentReadyCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject);
-            }
-        },
-
-        callEnterFunctionCallbacks: function(callExpression, functionConstruct, executionContextId)
-        {
-            for(var i = 0; i < this.enterFunctionCallbacks.length; i++)
-            {
-                var callbackObject = this.enterFunctionCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, callExpression, functionConstruct, executionContextId);
-            }
-        },
-
-        callCallbackCalledCallbacks: function(callbackConstruct, callCallbackConstruct, evaluationPosition)
-        {
-            for(var i = 0; i < this.callbackCalledCallbacks.length; i++)
-            {
-                var callbackObject = this.callbackCalledCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, callbackConstruct, callCallbackConstruct, evaluationPosition);
-            }
-        },
-
-        callExitFunctionCallbacks: function()
-        {
-            for(var i = 0; i < this.exitFunctionCallbacks.length; i++)
-            {
-                var callbackObject = this.exitFunctionCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject);
-            }
-        },
-
-        callNodeCreatedCallbacks: function(nodeModelObject, nodeType, isDynamic)
-        {
-            for(var i = 0; i < this.nodeCreatedCallbacks.length; i++)
-            {
-                var callbackObject = this.nodeCreatedCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, nodeModelObject, nodeType, isDynamic);
-            }
-        },
-
-        callExpressionEvaluatedCallbacks: function(codeConstruct)
-        {
-            this.expressionEvaluatedCallbackInfo.callback.call(this.expressionEvaluatedCallbackInfo.thisObject, codeConstruct);
-        },
-
-        callControlFlowProblematicReachedCallbacks: function(codeConstruct)
-        {
-            for(var i = 0; i < this.controlFlowProblematicCallbacks.length; i++)
-            {
-                var callbackObject = this.controlFlowProblematicCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, codeConstruct);
-            }
-        },
-
-        _callNodeInsertedCallbacks: function(nodeModelObject, nodeType, isDynamic)
-        {
-            for(var i = 0; i < this.nodeInsertedCallbacks.length; i++)
-            {
-                var callbackObject = this.nodeInsertedCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, nodeModelObject, nodeType, isDynamic);
-            }
-        },
-
-        _callInterpreterMessageGeneratedCallbacks: function(message)
-        {
-            for(var i = 0; i < this.interpreterMessageGeneratedCallbacks.length; i++)
-            {
-                var callbackObject = this.interpreterMessageGeneratedCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, message);
-            }
-        },
-
-        _callInterpretJsCallbacks: function(programModel)
-        {
-            for(var i = 0; i < this.interpretJsCallbacks.length; i++)
-            {
-                var callbackObject = this.interpretJsCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, programModel);
-            }
-        },
-
-        _callControlFlowConnectionCallbacks: function(codeConstruct)
-        {
-            for(var i = 0; i < this.controlFlowConnectionCallbacks.length; i++)
-            {
-                var callbackObject = this.controlFlowConnectionCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, codeConstruct);
-            }
-        },
-
-        callControlDependencyEstablishedCallbacks: function(sourceNode, targetNode, dependencyCreationInfo, destinationNodeDependencyInfo, isPreviouslyExecutedBlockStatementDependency)
-        {
-            for(var i = 0; i < this.controlDependencyEstablishedCallbacks.length; i++)
-            {
-                var callbackObject = this.controlDependencyEstablishedCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, sourceNode, targetNode, dependencyCreationInfo, destinationNodeDependencyInfo, isPreviouslyExecutedBlockStatementDependency);
-            }
-        },
-
         callDataDependencyEstablishedCallbacks: function(sourceNode, targetNode, dependencyCreationInfo, destinationNodeDependencyInfo, shouldNotFollowDependencies, isValueDependency)
         {
             if(sourceNode == null || targetNode == null) { return; }
 
-            for(var i = 0; i < this.dataDependencyEstablishedCallbacks.length; i++)
-            {
-                var callbackObject = this.dataDependencyEstablishedCallbacks[0];
-                callbackObject.callback.call
-                (
-                    callbackObject.thisObject, sourceNode, targetNode,
-                    dependencyCreationInfo, destinationNodeDependencyInfo, shouldNotFollowDependencies,
-                    isValueDependency
-                );
-            }
+            this.dependencyGraph.handleDataDependencyEstablished
+            (
+                sourceNode, targetNode, dependencyCreationInfo,
+                destinationNodeDependencyInfo, shouldNotFollowDependencies, isValueDependency
+            );
         },
 
         logDomQueried: function(methodName, selector, codeConstruct)
@@ -1288,29 +765,9 @@
             this.dynamicClassMap[classValue].nodeIdMap[nodeId] = 1;
         },
 
-        //TODO - think about new name
-        callBreakContinueReturnEventCallbacks: function(node, evaluationPosition, isCallbackReturn)
-        {
-            for(var i = 0; i < this.breakContinueReturnEventsCallbacks.length; i++)
-            {
-                var callbackObject = this.breakContinueReturnEventsCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, node, evaluationPosition, isCallbackReturn);
-            }
-        },
-
-        callImportantConstructReachedCallbacks: function(importantNode)
-        {
-            this.executionInfo.logImportantModificationReached(importantNode);
-            for(var i = 0; i < this.importantConstructReachedCallbacks.length; i++)
-            {
-                var callbackObject = this.importantConstructReachedCallbacks[i];
-                callbackObject.callback.call(callbackObject.thisObject, importantNode);
-            }
-        },
-
         _getDocumentObject: function()
         {
-            return Firecrow.IsDebugMode ? document : Firecrow.fbHelper._getCurrentPageDocument();
+            return Firecrow.isDebugMode ? document : Firecrow.fbHelper._getCurrentPageDocument();
         },
 
         registerSlicingCriteria: function(slicingCriteria)
@@ -1343,22 +800,14 @@
             if(xPath == "window" || xPath == "") { return this.globalObject; }
             if(xPath == "document") { return this.globalObject.document.implementationObject; }
 
-            try
-            {
-                return this.globalObject.document.implementationObject.evaluate
-                (
-                    xPath,
-                    this.globalObject.document.implementationObject,
-                    null, XPathResult.FIRST_ORDERED_NODE_TYPE,
-                    null
-                ).singleNodeValue;
-            }
-            catch(e)
-            {
-                alert("Getting element by XPath: " + xPath);
-                debugger;
-                return this.globalObject;
-            }
+
+            return this.globalObject.document.implementationObject.evaluate
+            (
+                xPath,
+                this.globalObject.document.implementationObject,
+                null, XPathResult.FIRST_ORDERED_NODE_TYPE,
+                null
+            ).singleNodeValue;
         },
 
         _getElementXPath: function(element)
@@ -1371,7 +820,9 @@
                 for (var sibling = element.previousSibling; sibling; sibling = sibling.previousSibling)
                 {
                     if (sibling.localName == element.localName)
+                    {
                         ++index;
+                    }
                 }
 
                 var tagName = element.localName.toLowerCase();
@@ -1387,7 +838,7 @@
             var arguments = [];
 
             var eventInfo = {};
-            var eventInfoJsObject = new fcModel.Event(eventInfo, this.globalObject, thisValue);
+            var eventInfoJsObject = new Firecrow.N_Interpreter.Event(eventInfo, this.globalObject, thisValue);
 
             for(var propName in eventTraceArgs)
             {
@@ -1408,14 +859,14 @@
                 }
             }
 
-            arguments.push(new fcModel.fcValue(eventInfo, eventInfoJsObject, null));
+            arguments.push(new Firecrow.N_Interpreter.fcValue(eventInfo, eventInfoJsObject, null));
 
             return arguments;
         },
 
         destruct: function()
         {
-            fcBrowser.Browser.LAST_USED_ID = 0;
+            Browser.LAST_USED_ID = 0;
 
             delete this.pageModel;
 
@@ -1427,30 +878,13 @@
             this.globalObject.destruct();
             delete this.globalObject;
 
-            delete this.nodeCreatedCallbacks;
-            delete this.nodeInsertedCallbacks;
-            delete this.interpretJsCallbacks;
-
-            delete this.dataDependencyEstablishedCallbacks;
-            delete this.controlDependencyEstablishedCallbacks;
-            delete this.interpreterMessageGeneratedCallbacks;
-            delete this.controlFlowConnectionCallbacks;
-            delete this.importantConstructReachedCallbacks;
-            delete this.documentReadyCallbacks;
-            delete this.enterFunctionCallbacks;
-            delete this.exitFunctionCallbacks;
-            delete this.breakContinueReturnEventsCallbacks;
-
             delete this.domQueriesMap;
 
-            delete this.errorMessages;
             delete this.cssRules;
-
-            delete this.executionInfo;
         },
 
-        notifyError: function(message) { Firecrow.DoppelBrowser.Browser.notifyError(message); }
+        notifyError: function(message) { Browser.notifyError(message); }
     };
 
-    fcBrowser.Browser.isForSlicing = false;
+    Browser.isForSlicing = false;
 })();

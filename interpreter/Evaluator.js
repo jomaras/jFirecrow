@@ -2,21 +2,16 @@
 /*************************************************************************************/
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
-    var fcModel = Firecrow.Interpreter.Model;
 
     var Evaluator;
 
     Firecrow.N_Interpreter.Evaluator = Evaluator = function(executionContextStack)
     {
-        try
-        {
-            this.executionContextStack = executionContextStack;
-            this.globalObject = executionContextStack.globalObject;
-            this.dependencyCreator = new fcSimulator.DependencyCreator(this.globalObject, this.executionContextStack);
+        this.executionContextStack = executionContextStack;
+        this.globalObject = executionContextStack.globalObject;
+        this.dependencyCreator = new Firecrow.N_Interpreter.DependencyCreator(this.globalObject, this.executionContextStack);
 
-            this.exceptionCallbacks = [];
-        }
-        catch(e) { fcSimulator.Evaluator.notifyError("Error when constructing evaluator: " + e);}
+        this.exceptionCallbacks = [];
     };
 
     Evaluator.notifyError = function(message) { alert("Evaluator - " + message); };
@@ -32,45 +27,38 @@
 
         evaluateCommand: function(command)
         {
-            try
+                 if (command.isEvalIdentifierCommand()) { this._evalIdentifierCommand(command); }
+            else if (command.isEvalAssignmentExpressionCommand()) { this._evalAssignmentCommand(command); }
+            else if (command.isEvalMemberExpressionCommand()) { this._evalMemberCommand(command); }
+            else if (command.isEvalMemberExpressionPropertyCommand()) { this._evalMemberPropertyCommand(command); }
+            else if (command.isThisExpressionCommand()) { this._evalThisCommand(command); }
+            else if (command.isDeclareVariableCommand()) { this._evalDeclareVariableCommand(command); }
+            else if (command.isDeclareFunctionCommand()) { this._evalDeclareFunctionCommand(command); }
+            else if (command.isEvalLiteralCommand()) { this._evalLiteralCommand(command); }
+            else if (command.isEvalRegExCommand()) { this._evalRegExLiteralCommand(command);}
+            else if (command.isEvalUpdateExpressionCommand()) { this._evalUpdateCommand(command); }
+            else if (command.isEvalUnaryExpressionCommand()) { this._evalUnaryExpression(command); }
+            else if (command.isEvalBinaryExpressionCommand()) { this._evalBinaryCommand(command); }
+            else if (command.isEvalLogicalExpressionItemCommand()) { this._evalLogicalItemCommand(command);}
+            else if (command.isEndLogicalExpressionCommand()) { this._evalEndLogicalCommand(command); }
+            else if (command.isEvalReturnExpressionCommand()) { this._evalReturnCommand(command); }
+            else if (command.isObjectExpressionCommand()) { this._evalObjectCommand(command); }
+            else if (command.isObjectPropertyCreationCommand()) { this._evalObjectPropertyCreationCommand(command);}
+            else if (command.isArrayExpressionCommand()) { this._evalArrayExpressionCommand(command);}
+            else if (command.isArrayExpressionItemCreationCommand()) { this._evalArrayExpressionItemCreationCommand(command);}
+            else if (command.isFunctionExpressionCreationCommand()) { this._evalFunctionExpressionCreationCommand(command); }
+            else if (command.isEvalForInWhereCommand()) { this._evalForInWhereCommand(command); }
+            else if (command.isEndEvalConditionalExpressionCommand()) { this._evalConditionalCommand(command);}
+            else if (command.isStartCatchStatementCommand()) { this._evalStartCatchStatementCommand(command);}
+            else if (command.isEndCatchStatementCommand()) { this._evalEndCatchCommand(command);}
+            else if (command.isCallInternalFunctionCommand()) { this._evalCallInternalFunction(command); }
+            else if (command.isEvalCallbackFunctionCommand()) { this._evalCallbackFunctionCommand(command); }
+            else if (command.isEvalSequenceExpressionCommand()) { this._evalSequence(command); }
+            else if (command.isEvalThrowExpressionCommand()) { this._evalThrowExpressionCommand(command); }
+            else if (command.isFinishEvalCommand()) { this._evalFinishEvalCommand(command); }
+            else
             {
-                     if (command.isEvalIdentifierCommand()) { this._evalIdentifierCommand(command); }
-                else if (command.isEvalAssignmentExpressionCommand()) { this._evalAssignmentCommand(command); }
-                else if (command.isEvalMemberExpressionCommand()) { this._evalMemberCommand(command); }
-                else if (command.isEvalMemberExpressionPropertyCommand()) { this._evalMemberPropertyCommand(command); }
-                else if (command.isThisExpressionCommand()) { this._evalThisCommand(command); }
-                else if (command.isDeclareVariableCommand()) { this._evalDeclareVariableCommand(command); }
-                else if (command.isDeclareFunctionCommand()) { this._evalDeclareFunctionCommand(command); }
-                else if (command.isEvalLiteralCommand()) { this._evalLiteralCommand(command); }
-                else if (command.isEvalRegExCommand()) { this._evalRegExLiteralCommand(command);}
-                else if (command.isEvalUpdateExpressionCommand()) { this._evalUpdateCommand(command); }
-                else if (command.isEvalUnaryExpressionCommand()) { this._evalUnaryExpression(command); }
-                else if (command.isEvalBinaryExpressionCommand()) { this._evalBinaryCommand(command); }
-                else if (command.isEvalLogicalExpressionItemCommand()) { this._evalLogicalItemCommand(command);}
-                else if (command.isEndLogicalExpressionCommand()) { this._evalEndLogicalCommand(command); }
-                else if (command.isEvalReturnExpressionCommand()) { this._evalReturnCommand(command); }
-                else if (command.isObjectExpressionCommand()) { this._evalObjectCommand(command); }
-                else if (command.isObjectPropertyCreationCommand()) { this._evalObjectPropertyCreationCommand(command);}
-                else if (command.isArrayExpressionCommand()) { this._evalArrayExpressionCommand(command);}
-                else if (command.isArrayExpressionItemCreationCommand()) { this._evalArrayExpressionItemCreationCommand(command);}
-                else if (command.isFunctionExpressionCreationCommand()) { this._evalFunctionExpressionCreationCommand(command); }
-                else if (command.isEvalForInWhereCommand()) { this._evalForInWhereCommand(command); }
-                else if (command.isEndEvalConditionalExpressionCommand()) { this._evalConditionalCommand(command);}
-                else if (command.isStartCatchStatementCommand()) { this._evalStartCatchStatementCommand(command);}
-                else if (command.isEndCatchStatementCommand()) { this._evalEndCatchCommand(command);}
-                else if (command.isCallInternalFunctionCommand()) { this._evalCallInternalFunction(command); }
-                else if (command.isEvalCallbackFunctionCommand()) { this._evalCallbackFunctionCommand(command); }
-                else if (command.isEvalSequenceExpressionCommand()) { this._evalSequence(command); }
-                else if (command.isEvalThrowExpressionCommand()) { this._evalThrowExpressionCommand(command); }
-                else if (command.isFinishEvalCommand()) { this._evalFinishEvalCommand(command); }
-                else
-                {
-                    this.notifyError(command, "Evaluator: Still not handling command of type: " +  command.type); return;
-                }
-            }
-            catch(e)
-            {
-                this.notifyError(command, "An error occurred when evaluating command: " + e + " " + e.fileName + " " + e.lineNumber);
+                this.notifyError(command, "Evaluator: Still not handling command of type: " +  command.type); return;
             }
         },
 
@@ -843,11 +831,7 @@
 
         _getPropertyValue: function(object, property, memberExpression)
         {
-            try
-            {
-                var propertyValue = object.iValue.getJsPropertyValue(property.jsValue, memberExpression);
-            }
-            catch(e) { debugger; }
+            var propertyValue = object.iValue.getJsPropertyValue(property.jsValue, memberExpression);
 
 
             if(!ValueTypeHelper.isOfType(propertyValue, fcModel.fcValue) && propertyValue != this.globalObject)

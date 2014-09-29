@@ -73,20 +73,16 @@
 
     fcModel.XMLHttpRequestPrototype = function(globalObject)
     {
-        try
-        {
-            this.initObject(globalObject);
-            this.constructor = fcModel.XMLHttpRequestPrototype;
-            this.name = "XMLHttpRequestPrototype";
+        this.initObject(globalObject);
+        this.constructor = fcModel.XMLHttpRequestPrototype;
+        this.name = "XMLHttpRequestPrototype";
 
-            fcModel.XMLHttpRequestPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
-            {
-                var internalFunction = globalObject.internalExecutor.createInternalFunction(XMLHttpRequest.prototype[propertyName], propertyName, this, true);
-                this[propertyName] = internalFunction;
-                this.addProperty(propertyName, internalFunction, null, false);
-            }, this);
-        }
-        catch(e) { Firecrow.Interpreter.Model.RegEx.notifyError("Error when creating regEx prototype:" + e); }
+        fcModel.XMLHttpRequestPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        {
+            var internalFunction = globalObject.internalExecutor.createInternalFunction(XMLHttpRequest.prototype[propertyName], propertyName, this, true);
+            this[propertyName] = internalFunction;
+            this.addProperty(propertyName, internalFunction, null, false);
+        }, this);
     };
 
     fcModel.XMLHttpRequest.notifyError = function(message) { alert("XMLHttpRequest - " + message); }
@@ -104,16 +100,12 @@
 
     fcModel.XMLHttpRequestFunction = function(globalObject)
     {
-        try
-        {
-            this.initObject(globalObject);
+        this.initObject(globalObject);
 
-            this.addProperty("prototype", globalObject.fcXMLHttpRequestPrototype);
+        this.addProperty("prototype", globalObject.fcXMLHttpRequestPrototype);
 
-            this.isInternalFunction = true;
-            this.name = "XMLHttpRequest";
-        }
-        catch(e){ Firecrow.Interpreter.Model.XMLHttpRequest.notifyError("Error when creating XMLHttpRequest Function:" + e); }
+        this.isInternalFunction = true;
+        this.name = "XMLHttpRequest";
     };
 
     fcModel.XMLHttpRequestFunction.prototype = new fcModel.Object();

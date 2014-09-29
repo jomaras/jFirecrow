@@ -11,52 +11,44 @@
     {
         isIncludedHtmlElement: function(htmlElement)
         {
-            try
+            if(htmlElement == null) debugger;
+            if(htmlElement.shouldBeIncluded) { return true; }
+
+            if(htmlElement.type == "script")
             {
-                if(htmlElement == null) debugger;
-                if(htmlElement.shouldBeIncluded) { return true; }
+                return this.isIncludedElement(htmlElement.pathAndModel.model);
+            }
+            else if(htmlElement.type == "style" || htmlElement.type == "link")
+            {
+                if(htmlElement.cssRules == null) { return false; }
 
-                if(htmlElement.type == "script")
+                var rules = htmlElement.cssRules;
+
+                for(var i = 0, length = rules.length; i < length; i++)
                 {
-                    return this.isIncludedElement(htmlElement.pathAndModel.model);
+                    if(rules[i].shouldBeIncluded) { return true; }
                 }
-                else if(htmlElement.type == "style" || htmlElement.type == "link")
+            }
+            else if (htmlElement.type == "textNode")
+            {
+                return htmlElement.shouldBeIncluded || (htmlElement.parent != null && htmlElement.parent.shouldBeIncluded);
+            }
+            else
+            {
+                var childNodes = htmlElement.childNodes;
+                if(childNodes != null)
                 {
-                    if(htmlElement.cssRules == null) { return false; }
-
-                    var rules = htmlElement.cssRules;
-
-                    for(var i = 0, length = rules.length; i < length; i++)
+                    for(var i = 0, length = childNodes.length; i < length; i++)
                     {
-                        if(rules[i].shouldBeIncluded) { return true; }
-                    }
-                }
-                else if (htmlElement.type == "textNode")
-                {
-                    return htmlElement.shouldBeIncluded || (htmlElement.parent != null && htmlElement.parent.shouldBeIncluded);
-                }
-                else
-                {
-                    var childNodes = htmlElement.childNodes;
-                    if(childNodes != null)
-                    {
-                        for(var i = 0, length = childNodes.length; i < length; i++)
+                        if(this.isIncludedHtmlElement(childNodes[i]))
                         {
-                            if(this.isIncludedHtmlElement(childNodes[i]))
-                            {
-                                return true;
-                            }
+                            return true;
                         }
                     }
                 }
+            }
 
-                return false;
-            }
-            catch(e)
-            {
-                debugger;
-                this.notifyError("Error when finding inclusions in htmlElement: " + e);
-            }
+            return false;
         },
 
         isIncludedElement: function(element)
@@ -407,9 +399,8 @@
             if(tryStatement.shouldBeIncluded) { return true;}
             if(this.isIncludedElement(tryStatement.block)) { return true; }
 
-            var handlers = tryStatement.handlers ||
-                (ValueTypeHelper.isArray(tryStatement.handler) ? tryStatement.handler :
-                    [tryStatement.handler]);
+            var handlers = tryStatement.handlers || (ValueTypeHelper.isArray(tryStatement.handler) ? tryStatement.handler
+                                                                                                   : [tryStatement.handler]);
 
             for(var i = 0; i < handlers.length; i++)
             {

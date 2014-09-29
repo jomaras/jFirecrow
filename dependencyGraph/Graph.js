@@ -35,36 +35,12 @@
     var Graph = fcGraph.Graph;
 
     Graph.notifyError = function(message) { alert("DependencyGraph - " + message); };
-    Graph.log = [];
-    Graph.shouldLog = false;
     Graph.sliceUnions = true;
     Graph.noOfSlicingCriteria = 0;
     Graph.sliceUnionProblematicExpressions = [];
 
     Graph.prototype =
     {
-        getSimplified: function()
-        {
-            var simplifiedGraph = { htmlNodes:[], cssNodes:[], jsNodes:[] };
-
-            for(var i = 0; i < this.htmlNodes.length; i++)
-            {
-                simplifiedGraph.htmlNodes.push(this.htmlNodes[i].getSimplified());
-            }
-
-            for(var i = 0; i < this.cssNodes.length; i++)
-            {
-                simplifiedGraph.cssNodes.push(this.cssNodes[i].getSimplified());
-            }
-
-            for(var i = 0; i < this.jsNodes.length; i++)
-            {
-                simplifiedGraph.jsNodes.push(this.jsNodes[i].getSimplified());
-            }
-
-            return simplifiedGraph;
-        },
-
         addNode: function(node)
         {
             this.nodes.push(node);
@@ -72,30 +48,6 @@
                  if (node.type == "html") { this.htmlNodes.push(node); }
             else if (node.type == "css") { this.cssNodes.push(node); }
             else if (node.type == "js") { this.jsNodes.push(node); }
-        },
-
-        pushExecutionContextId: function(executionContextId)
-        {
-            this.executionContextId = executionContextId;
-            this.executionContextIdStack.push(executionContextId);
-
-            if(this.executionContextIndexMap[this.executionContextId] == null) { this.executionContextIndexMap[this.executionContextId] = []; }
-        },
-
-        popExecutionContextId: function()
-        {
-            this.executionContextIdStack.pop();
-            this.executionContextId = this.executionContextIdStack[this.executionContextIdStack.length-1];
-        },
-
-        handleExpressionEvaluated: function(codeConstruct)
-        {
-            this.expressionTrace.push
-            ({
-                codeConstruct: codeConstruct,
-                dependencyIndex: codeConstruct.maxCreatedDependencyIndex,
-                executionContextId: this.executionContextId
-            });
         },
 
         handleNodeCreated: function(nodeModelObject, type, isDynamic)
@@ -274,28 +226,20 @@
 
         markGraph: function(model)
         {
-            try
+            this.previouslyExecutedBlockDependencies = [];
+            this.traversedEdgesMap = {};
+
+            this._traverseImportantDependencies(this.importantConstructDependencyIndexMapping);
+            this._traverseHtmlNodeDependencies(this.htmlNodes);
+
+            var addedDependencies = this._traverseIndirectDependencies();
+
+            while(addedDependencies != 0)
             {
-                this.previouslyExecutedBlockDependencies = [];
-                this.traversedEdgesMap = {};
-
-                this._traverseImportantDependencies(this.importantConstructDependencyIndexMapping);
-                this._traverseHtmlNodeDependencies(this.htmlNodes);
-
-                var addedDependencies = this._traverseIndirectDependencies();
-
-                while(addedDependencies != 0)
-                {
-                    addedDependencies = this._traverseIndirectDependencies();
-                }
-
-                Firecrow.N_DependencyGraph.DependencyPostprocessor.processHtmlElement(model);
+                addedDependencies = this._traverseIndirectDependencies();
             }
-            catch(e)
-            {
-                debugger;
-                this.notifyError("Error when marking graph: " + e);
-            }
+
+            Firecrow.N_DependencyGraph.DependencyPostprocessor.processHtmlElement(model);
         },
 
         _traverseIndirectDependencies: function()

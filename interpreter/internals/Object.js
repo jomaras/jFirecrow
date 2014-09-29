@@ -6,19 +6,19 @@
 
     fcInternals.Object.createObjectWithInit = function(globalObject, codeConstruct, implementationObject, proto)
     {
-        return (new fcInternals.Object()).initObject(globalObject, codeConstruct, implementationObject, proto);
+        return (new Object()).initObject(globalObject, codeConstruct, implementationObject, proto);
     }
 
-    fcInternals.Object.LAST_ID = 0;
-    fcInternals.Object.MONOLITIC_ARRAYS = true;
+    Object.LAST_ID = 0;
+    Object.MONOLITIC_ARRAYS = true;
 
-    fcInternals.Object.notifyError = function(message) { debugger; alert("Object - " + message); }
+    Object.notifyError = function(message) { debugger; alert("Object - " + message); }
 
-    fcInternals.Object.prototype =
+    Object.prototype =
     {
         initObject: function(globalObject, codeConstruct, implementationObject, proto)
         {
-            this.id = fcInternals.Object.LAST_ID++;
+            this.id = Object.LAST_ID++;
 
             this.globalObject = globalObject;
             this.implementationObject = implementationObject;
@@ -226,54 +226,50 @@
 
         addProperty: function(propertyName, propertyValue, codeConstruct, isEnumerable, optConfigurable, optWritable)
         {
-            try
+            if(this.preventExtensions) { return; }
+            if(propertyName == "__proto__") { this.setProto(propertyValue, codeConstruct); return; }
+
+            var property = this.getOwnProperty(propertyName);
+
+            if(property == null)
             {
-                if(this.preventExtensions) { return; }
-                if(propertyName == "__proto__") { this.setProto(propertyValue, codeConstruct); return; }
+                property = new Firecrow.N_Interpreter.Identifier(propertyName, propertyValue, codeConstruct, this.globalObject);
 
-                var property = this.getOwnProperty(propertyName);
+                this.properties.push(property);
 
-                if(property == null)
-                {
-                    property = new fcInternals.Identifier(propertyName, propertyValue, codeConstruct, this.globalObject);
-
-                    this.properties.push(property);
-
-                    if(isEnumerable) { this.enumeratedProperties.push(property); }
-                }
-                else
-                {
-                    property.setValue(propertyValue, codeConstruct);
-                }
-
-                if(isEnumerable === true || isEnumerable === false)
-                {
-                    property.enumerable = isEnumerable;
-                }
-
-                if(optConfigurable === true || optConfigurable === false)
-                {
-                    property.configurable = optConfigurable;
-                }
-
-                if(optWritable === true || optWritable === false)
-                {
-                    property.writable = optWritable;
-                }
-
-                if(propertyName == "prototype" && propertyValue != null && codeConstruct != null)
-                {
-                    this.prototypeDefinitionConstruct = { codeConstruct: codeConstruct, evaluationPositionId: this.globalObject.getPreciseEvaluationPositionId()};
-                }
-
-                if(codeConstruct != null)
-                {
-                    this._addModification(codeConstruct, this.globalObject.getPreciseEvaluationPositionId(), propertyName);
-                }
-
-                this._callCallbacks(this.addPropertyCallbackDescriptors, [propertyName, propertyValue, codeConstruct]);
+                if(isEnumerable) { this.enumeratedProperties.push(property); }
             }
-            catch(e) { fcInternals.Object.notifyError("Error when adding property:" + e); }
+            else
+            {
+                property.setValue(propertyValue, codeConstruct);
+            }
+
+            if(isEnumerable === true || isEnumerable === false)
+            {
+                property.enumerable = isEnumerable;
+            }
+
+            if(optConfigurable === true || optConfigurable === false)
+            {
+                property.configurable = optConfigurable;
+            }
+
+            if(optWritable === true || optWritable === false)
+            {
+                property.writable = optWritable;
+            }
+
+            if(propertyName == "prototype" && propertyValue != null && codeConstruct != null)
+            {
+                this.prototypeDefinitionConstruct = { codeConstruct: codeConstruct, evaluationPositionId: this.globalObject.getPreciseEvaluationPositionId()};
+            }
+
+            if(codeConstruct != null)
+            {
+                this._addModification(codeConstruct, this.globalObject.getPreciseEvaluationPositionId(), propertyName);
+            }
+
+            this._callCallbacks(this.addPropertyCallbackDescriptors, [propertyName, propertyValue, codeConstruct]);
         },
 
         setProto: function(proto, codeConstruct)
@@ -301,33 +297,29 @@
 
         deleteProperty: function(propertyName, codeConstruct)
         {
-            try
+            for(var i = 0; i < this.properties.length; i++)
             {
-                for(var i = 0; i < this.properties.length; i++)
+                if(this.properties[i].name == propertyName)
                 {
-                    if(this.properties[i].name == propertyName)
+                    ValueTypeHelper.removeFromArrayByIndex(this.properties, i);
+                    this.propertyDeletionPositionMap[propertyName] =
                     {
-                        ValueTypeHelper.removeFromArrayByIndex(this.properties, i);
-                        this.propertyDeletionPositionMap[propertyName] =
-                        {
-                            codeConstruct: codeConstruct,
-                            evaluationPosition: this.globalObject.getPreciseEvaluationPositionId()
-                        };
-                        this._addModification(codeConstruct, this.globalObject.getPreciseEvaluationPositionId(), propertyName);
-                        break;
-                    }
-                }
-
-                for(var i = 0; i < this.enumeratedProperties.length; i++)
-                {
-                    if(this.enumeratedProperties[i].name == propertyName)
-                    {
-                        ValueTypeHelper.removeFromArrayByIndex(this.enumeratedProperties, i);
-                        break;
-                    }
+                        codeConstruct: codeConstruct,
+                        evaluationPosition: this.globalObject.getPreciseEvaluationPositionId()
+                    };
+                    this._addModification(codeConstruct, this.globalObject.getPreciseEvaluationPositionId(), propertyName);
+                    break;
                 }
             }
-            catch(e) { fcInternals.Object.notifyError("Error when deleting property:" + e);}
+
+            for(var i = 0; i < this.enumeratedProperties.length; i++)
+            {
+                if(this.enumeratedProperties[i].name == propertyName)
+                {
+                    ValueTypeHelper.removeFromArrayByIndex(this.enumeratedProperties, i);
+                    break;
+                }
+            }
         },
 
         getPropertyDeletionPosition: function(propertyName)
@@ -377,7 +369,7 @@
         addDependencyToAllModifications: function(codeConstruct, modifications)
         {
             modifications = modifications || this.modifications;
-            if(codeConstruct == null || modifications == null || modifications.length == 0 || !fcInternals.Object.MONOLITIC_ARRAYS) { return; }
+            if(codeConstruct == null || modifications == null || modifications.length == 0 || !Object.MONOLITIC_ARRAYS) { return; }
 
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
 
@@ -397,24 +389,20 @@
 
         addDependenciesToAllProperties: function(codeConstruct)
         {
-            try
+            if(codeConstruct == null || !fcInternals.Object.MONOLITIC_ARRAYS) { return; }
+
+            if(this.dummyDependencyNode == null)
             {
-                if(codeConstruct == null || !fcInternals.Object.MONOLITIC_ARRAYS) { return; }
-
-                if(this.dummyDependencyNode == null)
-                {
-                    this.dummyDependencyNode = { type: "DummyCodeElement", id: this.id, mainObjectCreationCodeConstruct: this.creationCodeConstruct, nodeId: "D" + this.globalObject.DYNAMIC_NODE_COUNTER++};
-                    this.globalObject.browser.callNodeCreatedCallbacks(this.dummyDependencyNode, "js", true);
-                }
-
-                this.globalObject.dependencyCreator.createDataDependency
-                (
-                    codeConstruct,
-                    this.dummyDependencyNode,
-                    this.globalObject.getPreciseEvaluationPositionId()
-                );
+                this.dummyDependencyNode = { type: "DummyCodeElement", id: this.id, mainObjectCreationCodeConstruct: this.creationCodeConstruct, nodeId: "D" + this.globalObject.DYNAMIC_NODE_COUNTER++};
+                this.globalObject.browser.callNodeCreatedCallbacks(this.dummyDependencyNode, "js", true);
             }
-            catch(e) { debugger; fcInternals.Object.notifyError("Error when adding dependencies to all properties: " + e); }
+
+            this.globalObject.dependencyCreator.createDataDependency
+            (
+                codeConstruct,
+                this.dummyDependencyNode,
+                this.globalObject.getPreciseEvaluationPositionId()
+            );
         },
 
         addModification: function(codeConstruct, propertyName)
@@ -426,18 +414,14 @@
 
         _addModification: function(codeConstruct, evaluationPositionId, propertyName)
         {
-            try
-            {
-                if(codeConstruct == null) { return; }
-                if(!ValueTypeHelper.isStringInteger(propertyName) && propertyName != "length") { return; }
+            if(codeConstruct == null) { return; }
+            if(!ValueTypeHelper.isStringInteger(propertyName) && propertyName != "length") { return; }
 
-                var modificationDescription = { codeConstruct: codeConstruct, evaluationPositionId: evaluationPositionId };
+            var modificationDescription = { codeConstruct: codeConstruct, evaluationPositionId: evaluationPositionId };
 
-                this.modifications.push(modificationDescription);
+            this.modifications.push(modificationDescription);
 
-                this._callCallbacks(this.objectModifiedCallbackDescriptors, [modificationDescription]);
-            }
-            catch(e) { fcInternals.Object.notifyError("Error when adding modification:" + e);}
+            this._callCallbacks(this.objectModifiedCallbackDescriptors, [modificationDescription]);
         },
 
         _addDependenciesToPrototypeProperty: function(property, readPropertyConstruct)
@@ -490,17 +474,14 @@
             return this.creationContext == this.globalObject.executionContextStack.activeContext;
         }
     };
-});
 
-(function(){
-    var fcInternals = Firecrow.Interpreter.Internals;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    fcInternals.ObjectExecutor =
+    Firecrow.N_Interpreter.ObjectExecutor =
     {
         isInternalObjectMethod: function(potentialFunction)
         {
-            var methods = fcInternals.ObjectFunction.CONST.INTERNAL_PROPERTIES.METHODS;
+            var methods = Firecrow.N_Interpreter.ObjectFunction.CONST.INTERNAL_PROPERTIES.METHODS;
 
             for(var i = 0; i < methods.length; i++)
             {
@@ -536,7 +517,7 @@
             }
             else
             {
-                fcInternals.Object.notifyError("Unknown ObjectExecutor method");
+                Object.notifyError("Unknown ObjectExecutor method");
             }
         },
 
@@ -584,7 +565,7 @@
 
         _executeCreate: function(callExpression, args, globalObject)
         {
-            if(args.length == 0) { fcInternals.Object.notifyError("Can not call Object.create with zero parameters"); return null; }
+            if(args.length == 0) { Object.notifyError("Can not call Object.create with zero parameters"); return null; }
 
             var baseObject = {};
 
@@ -605,7 +586,7 @@
 
         _executeDefineProperties: function(callExpression, args, globalObject)
         {
-            if(args.length < 2) { fcInternals.Object.notifyError("Object.defineProperties can not have less than 2 arguments"); return null;}
+            if(args.length < 2) { Object.notifyError("Object.defineProperties can not have less than 2 arguments"); return null;}
 
             this._definePropertiesOnObject(args[0], args[1], globalObject, callExpression);
         },
@@ -629,7 +610,7 @@
                 var get = this._getPropertyDescriptorValue(propertyDescriptor.jsValue, "get", null);
                 var set = this._getPropertyDescriptorValue(propertyDescriptor.jsValue, "set", null);
 
-                if(get != null || set != null) { fcInternals.Object.notifyError("Still does not handle defining getters and setters"); return; }
+                if(get != null || set != null) { Object.notifyError("Still does not handle defining getters and setters"); return; }
 
                 var propertyValue = propertyDescriptor.iValue.getPropertyValue("value");
 
@@ -651,7 +632,7 @@
 
         _executeDefineProperty: function(callExpression, args, globalObject)
         {
-            if(args.length < 3) { fcInternals.Object.notifyError("Can not call Object.defineProperty with less than 3 parameters"); return; }
+            if(args.length < 3) { Object.notifyError("Can not call Object.defineProperty with less than 3 parameters"); return; }
 
             var propertyName = args[1].jsValue;
 
@@ -664,8 +645,8 @@
             var set = this._getPropertyDescriptorValue(jsPropertyDescriptorMap, "set", null);
             var value = jsPropertyDescriptorMap.value;
 
-            if(get != null || set != null) { fcInternals.Object.notifyError("Still does not handle defining getters and setters"); return; }
-            if(value == null) { fcInternals.Object.notifyError("Value must be set when definining property"); return; }
+            if(get != null || set != null) { Object.notifyError("Still does not handle defining getters and setters"); return; }
+            if(value == null) { Object.notifyError("Value must be set when definining property"); return; }
 
             args[0].iValue.addModification(callExpression, propertyName);
 
@@ -674,7 +655,7 @@
             dependencyCreator.createDataDependency(args[2].codeConstruct, callExpression);
             dependencyCreator.createDependenciesForObjectPropertyDefinition(args[2].codeConstruct);
 
-            Object.defineProperty(args[0].jsValue, propertyName,
+            window.Object.defineProperty(args[0].jsValue, propertyName,
             {
                 configurable: configurable,
                 enumerable: enumerable,
@@ -687,7 +668,7 @@
 
         _executeGetOwnPropertyDescriptor: function(callExpression, args, globalObject)
         {
-            if(args.length < 1) { fcInternals.Object.notifyError("Can not call getOwnPropertyDescriptor with 0 arguments"); return null; }
+            if(args.length < 1) { Object.notifyError("Can not call getOwnPropertyDescriptor with 0 arguments"); return null; }
 
             if(args.length == 1) { return globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, undefined); }
 
@@ -697,10 +678,10 @@
 
             var baseObject = {};
 
-            var newlyCreatedObject = new fcInternals.fcValue
+            var newlyCreatedObject = new Firecrow.N_Interpreter.fcValue
             (
                 baseObject,
-                fcInternals.Object.createObjectWithInit(globalObject, callExpression, baseObject),
+                Object.createObjectWithInit(globalObject, callExpression, baseObject),
                 callExpression
             );
 
@@ -719,36 +700,36 @@
 
         _executeKeys: function(callExpression, args, globalObject)
         {
-            if(args.length == 0) { fcInternals.Object.notifyError("Can not call Object.keys with 0 arguments"); return null; }
+            if(args.length == 0) { Object.notifyError("Can not call Object.keys with 0 arguments"); return null; }
 
-            if(args[0] == null || args[0].iValue == null) { fcInternals.Object.notifyError("Object keys argument hast to have iValue"); return null; }
+            if(args[0] == null || args[0].iValue == null) { Object.notifyError("Object keys argument hast to have iValue"); return null; }
 
             return this._createArrayFromPropertyNames(args[0].iValue, args[0].iValue.getEnumeratedPropertyNames(), globalObject, callExpression);
         },
 
         _getOwnPropertyNames: function(callExpression, args, globalObject)
         {
-            if(args.length == 0) { fcInternals.Object.notifyError("Can not call Object.keys with 0 arguments"); return null; }
+            if(args.length == 0) { Object.notifyError("Can not call Object.keys with 0 arguments"); return null; }
 
-            if(args[0] == null || args[0].iValue == null) { fcInternals.Object.notifyError("Object keys argument hast to have iValue"); return null; }
+            if(args[0] == null || args[0].iValue == null) { Object.notifyError("Object keys argument hast to have iValue"); return null; }
 
             return this._createArrayFromPropertyNames(args[0].iValue, args[0].iValue.getOwnPropertyNames(), globalObject, callExpression);
         },
 
         _executeGetPrototypeOf: function(callExpression, args, globalObject)
         {
-            if(args.length == 0) { fcInternals.Object.notifyError("Can not call Object.getPrototypeOf with 0 arguments"); return null; }
+            if(args.length == 0) { Object.notifyError("Can not call Object.getPrototypeOf with 0 arguments"); return null; }
 
-            if(args[0] == null || args[0].iValue == null) { fcInternals.Object.notifyError("Object getPrototypeOf argument hast to have iValue"); return null; }
+            if(args[0] == null || args[0].iValue == null) { Object.notifyError("Object getPrototypeOf argument hast to have iValue"); return null; }
 
             return args[0].iValue.proto;
         },
 
         _preventExtensions: function(callExpression, args, globalObject)
         {
-            if(args.length == 0) { fcInternals.Object.notifyError("Can not call Object.preventExtensions with 0 arguments"); return null; }
+            if(args.length == 0) { Object.notifyError("Can not call Object.preventExtensions with 0 arguments"); return null; }
 
-            if(args[0] == null || args[0].iValue == null) { fcInternals.Object.notifyError("Object preventExtensions argument hast to have iValue"); return null; }
+            if(args[0] == null || args[0].iValue == null) { Object.notifyError("Object preventExtensions argument hast to have iValue"); return null; }
 
             Object.preventExtensions(args[0].jsValue);
             args[0].iValue.preventExtensions = true;
@@ -759,9 +740,9 @@
 
         _isExtensible: function(callExpression, args, globalObject)
         {
-            if(args.length == 0) { fcInternals.Object.notifyError("Can not call Object.isExtensible with 0 arguments"); return null; }
+            if(args.length == 0) { Object.notifyError("Can not call Object.isExtensible with 0 arguments"); return null; }
 
-            if(args[0] == null || args[0].iValue == null) { fcInternals.Object.notifyError("Object isExtensible argument hast to have iValue"); return null; }
+            if(args[0] == null || args[0].iValue == null) { Object.notifyError("Object isExtensible argument hast to have iValue"); return null; }
 
             var dependencyCreator = globalObject.dependencyCreator;
 
@@ -828,7 +809,7 @@
             }
             else if (ValueTypeHelper.isBoolean(firstArgument.jsValue))
             {
-                return new fcInternals.fcValue
+                return new Firecrow.N_Interpreter.fcValue
                 (
                     new Boolean(firstArgument.jsValue),
                     new fcInternals.Boolean(firstArgument.jsValue, globalObject, constructorConstruct),
@@ -837,19 +818,19 @@
             }
             else if(ValueTypeHelper.isString(firstArgument.jsValue))
             {
-                return new fcInternals.fcValue
+                return new Firecrow.N_Interpreter.fcValue
                 (
                     new String(firstArgument.jsValue),
-                    new fcInternals.String(firstArgument.jsValue, globalObject, constructorConstruct),
+                    new Firecrow.N_Interpreter.String(firstArgument.jsValue, globalObject, constructorConstruct),
                     constructorConstruct
                 );
             }
             else if(ValueTypeHelper.isNumber(firstArgument.jsValue))
             {
-                return new fcInternals.fcValue
+                return new Firecrow.N_Interpreter.fcValue
                 (
                     new Number(firstArgument.jsValue),
-                    new fcInternals.Number(firstArgument.jsValue, globalObject, constructorConstruct),
+                    new Firecrow.N_Interpreter.Number(firstArgument.jsValue, globalObject, constructorConstruct),
                     constructorConstruct
                 );
             }
@@ -861,19 +842,15 @@
 
         _executeHasOwnProperty: function(thisObject, args, callExpression)
         {
-            if(thisObject == null || thisObject.iValue == null || args == null || args.length <= 0) { fcInternals.Object.notifyError("Invalid argument when executing hasOwnProperty");}
+            if(thisObject == null || thisObject.iValue == null || args == null || args.length <= 0) { Object.notifyError("Invalid argument when executing hasOwnProperty");}
 
             var result = thisObject.iValue.isOwnProperty(args[0].jsValue);
 
             return thisObject.iValue.globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, result);
         }
     };
-})();
 
-(function()
-{
-    var fcInternals = Firecrow.Interpreter.Internals;
-    fcInternals.ObjectFunction = function(globalObject)
+    Firecrow.N_Interpreter.ObjectFunction = function(globalObject)
     {
         this.initObject(globalObject);
 
@@ -882,15 +859,15 @@
         this.isInternalFunction = true;
         this.name = "Object";
 
-        fcInternals.ObjectFunction.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        Firecrow.N_Interpreter.ObjectFunction.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
             this.addProperty
             (
                 propertyName,
-                new fcInternals.fcValue
+                new Firecrow.N_Interpreter.fcValue
                 (
-                    Object[propertyName],
-                    fcInternals.Function.createInternalNamedFunction(globalObject, propertyName, this),
+                    window.Object[propertyName],
+                    Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, propertyName, this),
                     null
                 ),
                 null,
@@ -899,9 +876,9 @@
         }, this);
     };
 
-    fcInternals.ObjectFunction.prototype = new fcInternals.Object();
+    Firecrow.N_Interpreter.ObjectFunction.prototype = new fcInternals.Object();
 
-    fcInternals.ObjectFunction.CONST =
+    Firecrow.N_Interpreter.ObjectFunction.CONST =
     {
         INTERNAL_PROPERTIES:
         {
@@ -913,31 +890,26 @@
             ]
         }
     };
-})();
 
-(function()
-{
-    var fcModel = Firecrow.Interpreter.Model;
-
-    fcModel.ObjectPrototype = function(globalObject)
+    Firecrow.N_Interpreter.ObjectPrototype = function(globalObject)
     {
         this.initObject(globalObject);
-        this.constructor = fcModel.ObjectPrototype;
+        this.constructor = Firecrow.N_Interpreter.ObjectPrototype;
         this.name = "ObjectPrototype";
     };
 
-    fcModel.ObjectPrototype.prototype = new fcModel.Object();
-    fcModel.ObjectPrototype.prototype.initMethods = function()
+    Firecrow.N_Interpreter.ObjectPrototype.prototype = new fcModel.Object();
+    Firecrow.N_Interpreter.ObjectPrototype.prototype.initMethods = function()
     {
-        fcModel.ObjectPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        Firecrow.N_Interpreter.ObjectPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
             this.addProperty
             (
                 propertyName,
-                new fcModel.fcValue
+                new Firecrow.N_Interpreter.fcValue
                 (
                     Object.prototype[propertyName],
-                    fcModel.Function.createInternalNamedFunction(this.globalObject, propertyName, this),
+                    Firecrow.N_Interpreter.Function.createInternalNamedFunction(this.globalObject, propertyName, this),
                     null
                 ),
                 null,
@@ -946,7 +918,7 @@
         }, this);
     };
 
-    fcModel.ObjectPrototype.CONST =
+    Firecrow.N_Interpreter.ObjectPrototype.CONST =
     {
         INTERNAL_PROPERTIES :
         {

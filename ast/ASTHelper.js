@@ -337,68 +337,64 @@
 
         setParentsChildRelationships: function(rootElement)
         {
-            try
+            if(rootElement == null || rootElement.parentChildRelationshipsHaveBeenSet) { return; }
+
+            var lineNumberAdjust = rootElement.lineAdjuster || 0;
+            var source = rootElement.source || "";
+
+            this.traverseAst(rootElement, function(currentElement, propertyName, parentElement)
             {
-                if(rootElement == null || rootElement.parentChildRelationshipsHaveBeenSet) { return; }
-
-                var lineNumberAdjust = rootElement.lineAdjuster || 0;
-                var source = rootElement.source || "";
-
-                this.traverseAst(rootElement, function(currentElement, propertyName, parentElement)
+                if(currentElement != null)
                 {
+                    currentElement.parent = parentElement;
+                }
+
+                if(ASTHelper.isProgram(currentElement))
+                {
+                    lineNumberAdjust = currentElement.lineAdjuster || 0;
+                    source = rootElement.source || "";
+                }
+
+                if(currentElement.loc != null)
+                {
+                    currentElement.loc.start.line += lineNumberAdjust;
+                    currentElement.loc.end.line += lineNumberAdjust
+                    currentElement.loc.source = source;
+                }
+
+                if(parentElement != null)
+                {
+                    if(parentElement.children == null) { parentElement.children = []; }
+
                     if(currentElement != null)
                     {
-                        currentElement.parent = parentElement;
-                    }
+                        currentElement.indexInParent = parentElement.children.length;
 
-                    if(ASTHelper.isProgram(currentElement))
-                    {
-                        lineNumberAdjust = currentElement.lineAdjuster || 0;
-                        source = rootElement.source || "";
-                    }
-
-                    if(currentElement.loc != null)
-                    {
-                        currentElement.loc.start.line += lineNumberAdjust;
-                        currentElement.loc.end.line += lineNumberAdjust
-                        currentElement.loc.source = source;
-                    }
-
-                    if(parentElement != null)
-                    {
-                        if(parentElement.children == null) { parentElement.children = []; }
-
-                        if(currentElement != null)
+                        if(ASTHelper.getFunctionParent(currentElement) != null)
                         {
-                            currentElement.indexInParent = parentElement.children.length;
-
-                            if(ASTHelper.getFunctionParent(currentElement) != null)
+                            for(var i = parentElement.children.length - 1; i >= 0; i--)
                             {
-                                for(var i = parentElement.children.length - 1; i >= 0; i--)
-                                {
-                                    var child = parentElement.children[i];
+                                var child = parentElement.children[i];
 
-                                    if((ASTHelper.isLoopStatement(child) || ASTHelper.isIfStatement(child)))
-                                    {
-                                        currentElement.previousCondition = child.test;
-                                        break;
-                                    }
-                                }
-
-                                if(ASTHelper.isStatement(parentElement) && currentElement.previousCondition == null)
+                                if((ASTHelper.isLoopStatement(child) || ASTHelper.isIfStatement(child)))
                                 {
-                                    currentElement.previousCondition = parentElement.previousCondition;
+                                    currentElement.previousCondition = child.test;
+                                    break;
                                 }
                             }
 
-                            parentElement.children.push(currentElement);
+                            if(ASTHelper.isStatement(parentElement) && currentElement.previousCondition == null)
+                            {
+                                currentElement.previousCondition = parentElement.previousCondition;
+                            }
                         }
-                    }
-                });
 
-                rootElement.parentChildRelationshipsHaveBeenSet = true;
-            }
-            catch(e) { alert("Error when setting parent-child relationships:" + e); }
+                        parentElement.children.push(currentElement);
+                    }
+                }
+            });
+
+            rootElement.parentChildRelationshipsHaveBeenSet = true;
         },
 
         isAncestor: function(firstNode, secondNode)
@@ -627,28 +623,24 @@
 
         getTypeExpressionsFromProgram: function(program, types)
         {
-            try
+            var result = {};
+
+            var traversalFunction = function(elementValue, elementName, parentObject)
             {
-                var result = {};
-
-                var traversalFunction = function(elementValue, elementName, parentObject)
+                types.forEach(function(type)
                 {
-                    types.forEach(function(type)
+                    if(elementName === "type" &&  elementValue === type)
                     {
-                        if(elementName === "type" &&  elementValue === type)
-                        {
-                            if(result[type] == null) { result[type] = []; }
+                        if(result[type] == null) { result[type] = []; }
 
-                            result[type].push(parentObject);
-                        }
-                    });
-                };
+                        result[type].push(parentObject);
+                    }
+                });
+            };
 
-                this.traverseAst(program, traversalFunction);
+            this.traverseAst(program, traversalFunction);
 
-                return result;
-            }
-            catch(e) { alert("Error while getting type expressions from program in ASTHelper: " + e);}
+            return result;
         },
 
         createCopy: function(programModel, copyOnlyUsedElements)
@@ -723,38 +715,31 @@
 
         traverseWholeAST: function(astElement, processElementFunction)
         {
-            try
+            if(astElement == null) { return; }
+
+            if(ASTHelper._isString(astElement)) { return; }
+
+            for(var propName in astElement)
             {
-                if(astElement == null) { return; }
+                var propertyValue = astElement[propName];
 
-                if(ASTHelper._isString(astElement)) { return; }
-
-                for(var propName in astElement)
+                if(ASTHelper._isArray(propertyValue))
                 {
-                    var propertyValue = astElement[propName];
-
-                    if(ASTHelper._isArray(propertyValue))
+                    for(var i = 0; i < propertyValue.length; i++)
                     {
-                        for(var i = 0; i < propertyValue.length; i++)
-                        {
-                            processElementFunction(propertyValue[i], propName, astElement, i);
-                            this.traverseWholeAST(propertyValue[i], processElementFunction);
-                        }
-                    }
-                    else if(ASTHelper._isString(propertyValue))
-                    {
-                        processElementFunction(propertyValue, propName, astElement);
-                    }
-                    else
-                    {
-                        processElementFunction(propertyValue, propName, astElement);
-                        this.traverseWholeAST(propertyValue, processElementFunction);
+                        processElementFunction(propertyValue[i], propName, astElement, i);
+                        this.traverseWholeAST(propertyValue[i], processElementFunction);
                     }
                 }
-            }
-            catch(e)
-            {
-                alert("Error while traversing whole AST in ASTHelper: " + e);
+                else if(ASTHelper._isString(propertyValue))
+                {
+                    processElementFunction(propertyValue, propName, astElement);
+                }
+                else
+                {
+                    processElementFunction(propertyValue, propName, astElement);
+                    this.traverseWholeAST(propertyValue, processElementFunction);
+                }
             }
         },
 
@@ -868,100 +853,88 @@
 
         traverseDirectSourceElements: function(astElement, processSourceElementFunction, enterBranchAndLoops)
         {
-            try
+            if((this.isStatement(astElement) || this.isFunctionDeclaration(astElement) || this.isVariableDeclaration(astElement)) && !this.isBlockStatement(astElement))
             {
-                if((this.isStatement(astElement) || this.isFunctionDeclaration(astElement) || this.isVariableDeclaration(astElement)) && !this.isBlockStatement(astElement))
-                {
-                    processSourceElementFunction(astElement);
-                }
+                processSourceElementFunction(astElement);
+            }
 
-                if(this.isProgram(astElement) || this.isBlockStatement(astElement))
+            if(this.isProgram(astElement) || this.isBlockStatement(astElement))
+            {
+                this.traverseArrayOfDirectStatements(astElement.body, astElement, processSourceElementFunction, enterBranchAndLoops);
+            }
+            else if (this.isIfStatement(astElement))
+            {
+                if(enterBranchAndLoops)
                 {
-                    this.traverseArrayOfDirectStatements(astElement.body, astElement, processSourceElementFunction, enterBranchAndLoops);
-                }
-                else if (this.isIfStatement(astElement))
-                {
-                    if(enterBranchAndLoops)
+                    this.traverseDirectSourceElements(astElement.consequent, processSourceElementFunction, enterBranchAndLoops);
+
+                    if(astElement.alternate != null)
                     {
-                        this.traverseDirectSourceElements(astElement.consequent, processSourceElementFunction, enterBranchAndLoops);
-
-                        if(astElement.alternate != null)
-                        {
-                            this.traverseDirectSourceElements(astElement.alternate, processSourceElementFunction, enterBranchAndLoops);
-                        }
+                        this.traverseDirectSourceElements(astElement.alternate, processSourceElementFunction, enterBranchAndLoops);
                     }
                 }
-                else if (this.isLabeledStatement(astElement)
-                    || this.isLetStatement(astElement))
+            }
+            else if (this.isLabeledStatement(astElement)
+                || this.isLetStatement(astElement))
+            {
+                this.traverseDirectSourceElements(astElement.body, processSourceElementFunction, enterBranchAndLoops);
+            }
+            else if (this.isLoopStatement(astElement)
+                || this.isWithStatement(astElement))
+            {
+                if(enterBranchAndLoops)
                 {
                     this.traverseDirectSourceElements(astElement.body, processSourceElementFunction, enterBranchAndLoops);
                 }
-                else if (this.isLoopStatement(astElement)
-                    || this.isWithStatement(astElement))
-                {
-                    if(enterBranchAndLoops)
-                    {
-                        this.traverseDirectSourceElements(astElement.body, processSourceElementFunction, enterBranchAndLoops);
-                    }
-                }
-                else if (this.isSwitchStatement(astElement))
-                {
-                    if(enterBranchAndLoops)
-                    {
-                        astElement.cases.forEach(function(switchCase)
-                        {
-                            this.traverseArrayOfDirectStatements
-                            (
-                                switchCase.consequent,
-                                astElement,
-                                processSourceElementFunction,
-                                enterBranchAndLoops
-                            );
-                        }, this);
-                    }
-                }
-                else if(this.isTryStatement(astElement))
-                {
-                    if(enterBranchAndLoops)
-                    {
-                        this.traverseDirectSourceElements(astElement.block, processSourceElementFunction, enterBranchAndLoops);
-
-                        var handlers = astElement.handlers || (ASTHelper._isArray(astElement.handler) ? astElement.handler : [astElement.handler]);
-
-                        handlers.forEach(function(catchClause)
-                        {
-                            this.traverseDirectSourceElements(catchClause.body, processSourceElementFunction, enterBranchAndLoops);
-                        }, this);
-                    }
-
-                    if(astElement.finalizer != null)
-                    {
-                        this.traverseDirectSourceElements(astElement.finalizer, processSourceElementFunction, enterBranchAndLoops);
-                    }
-                }
-                else if (this.isBreakStatement(astElement)
-                    || this.isContinueStatement(astElement)
-                    || this.isReturnStatement(astElement)
-                    || this.isThrowStatement(astElement)
-                    || this.isDebuggerStatement(astElement)) { }
             }
-            catch(e)
+            else if (this.isSwitchStatement(astElement))
             {
-                debugger;
-                alert("Error while traversing direct source elements in ASTHelper: " + e);
+                if(enterBranchAndLoops)
+                {
+                    astElement.cases.forEach(function(switchCase)
+                    {
+                        this.traverseArrayOfDirectStatements
+                        (
+                            switchCase.consequent,
+                            astElement,
+                            processSourceElementFunction,
+                            enterBranchAndLoops
+                        );
+                    }, this);
+                }
             }
+            else if(this.isTryStatement(astElement))
+            {
+                if(enterBranchAndLoops)
+                {
+                    this.traverseDirectSourceElements(astElement.block, processSourceElementFunction, enterBranchAndLoops);
+
+                    var handlers = astElement.handlers || (ASTHelper._isArray(astElement.handler) ? astElement.handler : [astElement.handler]);
+
+                    handlers.forEach(function(catchClause)
+                    {
+                        this.traverseDirectSourceElements(catchClause.body, processSourceElementFunction, enterBranchAndLoops);
+                    }, this);
+                }
+
+                if(astElement.finalizer != null)
+                {
+                    this.traverseDirectSourceElements(astElement.finalizer, processSourceElementFunction, enterBranchAndLoops);
+                }
+            }
+            else if (this.isBreakStatement(astElement)
+                || this.isContinueStatement(astElement)
+                || this.isReturnStatement(astElement)
+                || this.isThrowStatement(astElement)
+                || this.isDebuggerStatement(astElement)) { }
         },
 
         traverseArrayOfDirectStatements: function(statements, parentElement, processSourceElementFunction, enterBranchAndLoops)
         {
-            try
-            {
-                statements.forEach(function(statement)
-                {
-                    this.traverseDirectSourceElements(statement, processSourceElementFunction, enterBranchAndLoops);
-                }, this);
-            }
-            catch(e) { debugger; alert("Error while traversing direct statements: " + e + " for " + JSON.stringify(parentElement));}
+           statements.forEach(function(statement)
+           {
+                this.traverseDirectSourceElements(statement, processSourceElementFunction, enterBranchAndLoops);
+           }, this);
         },
 
         getParentOfTypes: function(codeConstruct, types)
