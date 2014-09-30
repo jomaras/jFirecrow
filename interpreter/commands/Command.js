@@ -4,7 +4,7 @@
 (function() {
     /*************************************************************************************/
     var ASTHelper = Firecrow.ASTHelper;
-    var Command = Firecrow.Interpreter.Command = function (codeConstruct, type, parentFunctionCommand)
+    var Command = Firecrow.N_Interpreter.Command = function (codeConstruct, type, parentFunctionCommand)
     {
         this.id = Command.LAST_COMMAND_ID++;
         this.codeConstruct = codeConstruct;

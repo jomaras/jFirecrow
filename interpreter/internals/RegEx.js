@@ -1,11 +1,10 @@
 (function() {
-    var fcInternals = Firecrow.Interpreter.Internals;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    fcInternals.RegEx = function(jsRegExp, globalObject, codeConstruct)
+    var RegEx = Firecrow.N_Interpreter.RegEx = function(jsRegExp, globalObject, codeConstruct)
     {
         this.jsRegExp = jsRegExp;
-        this.constructor = fcInternals.RegEx;
+        this.constructor = RegEx;
 
         this.initObject(globalObject, codeConstruct, jsRegExp, globalObject.fcRegExPrototype);
 
@@ -15,15 +14,15 @@
         this.addProperty("multiline", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, jsRegExp.multiline), codeConstruct);
         this.addProperty("source", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, jsRegExp.source), codeConstruct);
 
-        fcInternals.RegExPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        RegExPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
             this.addProperty
             (
                 propertyName,
-                new fcInternals.fcValue
+                new Firecrow.N_Interpreter.fcValue
                 (
                     this.jsRegExp[propertyName],
-                    fcInternals.Function.createInternalNamedFunction(globalObject, propertyName, this),
+                    Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, propertyName, this),
                     null
                 ),
                 null,
@@ -62,26 +61,26 @@
         }
     };
 
-    fcInternals.RegEx.notifyError = function(message) { alert("RegEx - " + message); }
-    fcInternals.RegEx.prototype = new fcInternals.Object();
+    RegEx.notifyError = function(message) { alert("RegEx - " + message); }
+    RegEx.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcInternals.RegExPrototype = function(globalObject)
+    var RegExPrototype = Firecrow.N_Interpreter.RegExPrototype = function(globalObject)
     {
-        this.initObject(globalObject, null, RegExp.prototype, globalObject.fcObjectPrototype);
-        this.constructor = fcInternals.RegExPrototype;
+        this.initObject(globalObject, null, window.RegExp.prototype, globalObject.fcObjectPrototype);
+        this.constructor = RegExPrototype;
         this.name = "RegExPrototype";
 
-        fcInternals.RegExPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        RegExPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
-            var internalFunction = globalObject.internalExecutor.createInternalFunction(RegExp.prototype[propertyName], propertyName, this, true);
+            var internalFunction = globalObject.internalExecutor.createInternalFunction(window.RegExp.prototype[propertyName], propertyName, this, true);
             this[propertyName] = internalFunction;
             this.addProperty(propertyName, internalFunction, null, false);
         }, this);
     };
 
-    fcInternals.RegExPrototype.prototype = new fcInternals.Object();
+    RegExPrototype.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcInternals.RegExPrototype.CONST =
+    RegExPrototype.CONST =
     {
         INTERNAL_PROPERTIES :
         {
@@ -90,9 +89,9 @@
         }
     };
 
-    fcInternals.RegExFunction = function(globalObject)
+    var RegExFunction = Firecrow.N_Interpreter.RegExFunction = function(globalObject)
     {
-        this.initObject(globalObject, null, RegExp, globalObject.fcFunctionPrototype);
+        this.initObject(globalObject, null, window.RegExp, globalObject.fcFunctionPrototype);
 
         this.addProperty("prototype", globalObject.fcRegExPrototype);
 
@@ -100,9 +99,9 @@
         this.name = "RegExp";
     };
 
-    fcInternals.RegExFunction.prototype = new fcInternals.Object();
+    RegExFunction.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcInternals.RegExExecutor =
+    Firecrow.N_Interpreter.RegExExecutor =
     {
         executeInternalRegExMethod: function(thisObject, functionObject, args, callExpression)
         {
@@ -119,12 +118,12 @@
             {
                 case "exec":
                     var result = thisObjectValue[functionName].apply(thisObjectValue, globalObject.getJsValues(args));
-                    fcThisValue.addProperty("lastIndex", new fcInternals.fcValue(thisObjectValue.lastIndex, thisObjectValue.lastIndex, callExpression),callExpression);
+                    fcThisValue.addProperty("lastIndex", new Firecrow.N_Interpreter.fcValue(thisObjectValue.lastIndex, thisObjectValue.lastIndex, callExpression),callExpression);
 
                     fcThisValue.addDependenciesToAllModifications(callExpression);
                     fcThisValue.modifications.push({codeConstruct: callExpression, evaluationPositionId: fcThisValue.globalObject.getPreciseEvaluationPositionId()});
 
-                    if(result == null) { return new fcInternals.fcValue(null, null, callExpression); }
+                    if(result == null) { return new Firecrow.N_Interpreter.fcValue(null, null, callExpression); }
                     else if (ValueTypeHelper.isArray(result))
                     {
                         var internalPrimitives = [];
@@ -153,6 +152,6 @@
             }
         },
 
-        notifyError: function(message) { fcInternals.RegEx.notifyError(message);}
+        notifyError: function(message) { RegEx.notifyError(message);}
     };
 })();

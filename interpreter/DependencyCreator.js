@@ -2,9 +2,8 @@
     /*************************************************************************************/
     var ASTHelper = Firecrow.ASTHelper;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
-    var DependencyCreator;
 
-    Firecrow.N_Interpreter.DependencyCreator = DependencyCreator = function(globalObject, executionContextStack)
+    var DependencyCreator = Firecrow.N_Interpreter.DependencyCreator = function(globalObject, executionContextStack)
     {
         this.globalObject = globalObject;
         this.executionContextStack = executionContextStack;

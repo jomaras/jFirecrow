@@ -2,8 +2,7 @@
 {
     var ASTHelper = Firecrow.ASTHelper;
 
-    var Identifier;
-    Firecrow.N_Interpreter.Identifier = Identifier = function(name, value, codeConstruct, globalObject)
+    var Identifier = Firecrow.N_Interpreter.Identifier = function(name, value, codeConstruct, globalObject)
     {
         this.id = Identifier.LAST_ID++;
         this.name = name;

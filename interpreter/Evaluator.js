@@ -3,9 +3,7 @@
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
 
-    var Evaluator;
-
-    Firecrow.N_Interpreter.Evaluator = Evaluator = function(executionContextStack)
+    var Evaluator = Firecrow.N_Interpreter.Evaluator = function(executionContextStack)
     {
         this.executionContextStack = executionContextStack;
         this.globalObject = executionContextStack.globalObject;

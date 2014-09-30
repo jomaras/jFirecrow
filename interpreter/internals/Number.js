@@ -1,7 +1,6 @@
 (function()
 {
-    var Number;
-    Firecrow.N_Interpreter.Number = Number = function(value, globalObject, codeConstruct, isLiteral)
+    var Number = Firecrow.N_Interpreter.Number = function(value, globalObject, codeConstruct, isLiteral)
     {
         this.initObject(globalObject, codeConstruct);
 
@@ -19,10 +18,9 @@
         return this.getPropertyValue(propertyName, codeConstruct);
     };
 
-    var NumberFunction;
-    Firecrow.N_Interpreter.NumberFunction = NumberFunction = function(globalObject)
+    var NumberFunction = Firecrow.N_Interpreter.NumberFunction = function(globalObject)
     {
-        this.initObject(globalObject, null, Number, globalObject.fcFunctionPrototype);
+        this.initObject(globalObject, null, window.Number, globalObject.fcFunctionPrototype);
         this.constructor = NumberPrototype;
 
         this.addProperty("prototype", globalObject.fcNumberPrototype);
@@ -42,12 +40,11 @@
 
     NumberFunction.prototype = new Firecrow.N_Interpreter.Object();
 
-    var NumberPrototype;
-    Firecrow.N_Interpreter.NumberPrototype = function(globalObject)
+    var NumberPrototype = Firecrow.N_Interpreter.NumberPrototype = function(globalObject)
     {
-        this.initObject(globalObject, null, Number.prototype, globalObject.fcObjectPrototype);
+        this.initObject(globalObject, null, window.Number.prototype, globalObject.fcObjectPrototype);
         this.name = "NumberPrototype";
     };
 
     NumberPrototype.prototype = new Firecrow.N_Interpreter.Object();
-});
+})();

@@ -3,9 +3,7 @@
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
 
-    var VariableObject;
-
-    Firecrow.N_Interpreter.VariableObject = function(executionContext)
+    var VariableObject = Firecrow.N_Interpreter.VariableObject = function(executionContext)
     {
         this.executionContext = executionContext;
         this.identifiers = [];
@@ -17,7 +15,7 @@
     {
         registerIdentifier: function(identifier)
         {
-            if(!ValueTypeHelper.isOfType(identifier, fcModel.Identifier)) { VariableObject.notifyError("When registering an identifier has to be passed"); return; }
+            if(!ValueTypeHelper.isOfType(identifier, Firecrow.N_Interpreter.Identifier)) { VariableObject.notifyError("When registering an identifier has to be passed"); return; }
 
             var existingIdentifier = this.getIdentifier(identifier.name);
 
@@ -194,7 +192,7 @@
 
             formalParameter.setValue
             (
-                sentArguments[i] || new fcModel.fcValue(undefined, undefined, formalParameter.declarationPosition != null ? formalParameter.declarationPosition.codeConstruct : null),
+                sentArguments[i] || new Firecrow.N_Interpreter.fcValue(undefined, undefined, formalParameter.declarationPosition != null ? formalParameter.declarationPosition.codeConstruct : null),
                 argumentConstructs[i]
             );
         }

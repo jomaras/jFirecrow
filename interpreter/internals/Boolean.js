@@ -1,7 +1,6 @@
 (function(){
 
-    var Boolean;
-    Firecrow.N_Interpreter.Boolean = Boolean = function(value, globalObject, codeConstruct, isLiteral)
+    var Boolean = Firecrow.N_Interpreter.Boolean = function(value, globalObject, codeConstruct, isLiteral)
     {
         this.initObject(globalObject, codeConstruct);
 
@@ -23,8 +22,7 @@
         return this.isLiteral;
     };
 
-    var BooleanFunction;
-    Firecrow.N_Interpreter.BooleanFunction = BooleanFunction = function(globalObject)
+    var BooleanFunction = Firecrow.N_Interpreter.BooleanFunction = function(globalObject)
     {
         this.initObject(globalObject);
 
@@ -37,8 +35,8 @@
 
     BooleanFunction.prototype = new Firecrow.N_Interpreter.Object();
 
-    var BooleanPrototype;
-    Firecrow.N_Interpreter.BooleanPrototype = BooleanPrototype = function(globalObject)
+
+    var BooleanPrototype = Firecrow.N_Interpreter.BooleanPrototype = function(globalObject)
     {
         this.initObject(globalObject);
 

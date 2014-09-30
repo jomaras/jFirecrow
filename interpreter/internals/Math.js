@@ -1,9 +1,7 @@
 (function()
 {
 /*************************************************************************************/
-    var Math;
-
-    Firecrow.N_Interpreter.Math = Math = function(globalObject)
+    var Math = Firecrow.N_Interpreter.Math = function(globalObject)
     {
         this.initObject(globalObject);
 
@@ -44,7 +42,7 @@
                 "log", "max", "min", "pow", "random", "round", "sin", "sqrt", "tan"
             ]
         }
-    }
+    };
 
     Math.prototype = new Firecrow.N_Interpreter.Object();
 
@@ -66,6 +64,6 @@
         {
             return Firecrow.N_Interpreter.Math.CONST.INTERNAL_PROPERTIES.METHODS.indexOf(functionObject.name) != -1;
         }
-    }
+    };
     /*************************************************************************************/
 })();

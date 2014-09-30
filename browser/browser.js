@@ -886,5 +886,5 @@
         notifyError: function(message) { Browser.notifyError(message); }
     };
 
-    Browser.isForSlicing = false;
+    Browser.isForSlicing = true;
 })();

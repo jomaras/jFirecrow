@@ -1,9 +1,8 @@
 (function()
 { 
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
-    var fcInternals = Firecrow.Interpreter.Internals;
 
-    fcInternals.String = function(value, globalObject, codeConstruct, isLiteral)
+    var String = Firecrow.N_Interpreter.String = function(value, globalObject, codeConstruct, isLiteral)
     {
         this.initObject(globalObject, codeConstruct);
 
@@ -14,29 +13,29 @@
         this.addProperty("length", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, value.length), codeConstruct, false);
     };
 
-    fcInternals.String.notifyError = function(message) { alert("String - " + message); };
-    fcInternals.String.prototype = new fcInternals.Object();
-    fcInternals.String.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
+    String.notifyError = function(message) { alert("String - " + message); };
+    String.prototype = new Firecrow.N_Interpreter.Object();
+    String.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
     {
         return this.getPropertyValue(propertyName, codeConstruct);
     };
 
-    fcInternals.StringPrototype = function(globalObject)
+    var StringPrototype = Firecrow.N_Interpreter.StringPrototype = function(globalObject)
     {
-        this.initObject(globalObject, null, String.prototype, globalObject.fcObjectPrototype);
-        this.constructor = fcInternals.StringPrototype;
+        this.initObject(globalObject, null, window.String.prototype, globalObject.fcObjectPrototype);
+        this.constructor = StringPrototype;
         this.name = "StringPrototype";
 
         //https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array#Methods_2
-        fcInternals.StringPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        StringPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
             this.addProperty
             (
                 propertyName,
-                new fcInternals.fcValue
+                new Firecrow.N_Interpreter.fcValue
                 (
-                    String.prototype[propertyName],
-                    fcInternals.Function.createInternalNamedFunction(globalObject, propertyName, this),
+                    window.String.prototype[propertyName],
+                    Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, propertyName, this),
                     null
                 ),
                 null,
@@ -45,7 +44,7 @@
         }, this);
     };
 
-    fcInternals.StringPrototype.CONST =
+    StringPrototype.CONST =
     {
         INTERNAL_PROPERTIES :
         {
@@ -58,26 +57,26 @@
         }
     };
 
-    fcInternals.StringPrototype.prototype = new fcInternals.Object();
+    StringPrototype.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcInternals.StringFunction = function(globalObject)
+    var StringFunction = Firecrow.N_Interpreter.StringFunction = function(globalObject)
     {
-        this.initObject(globalObject, null, String, globalObject.fcFunctionPrototype);
+        this.initObject(globalObject, null, window.String, globalObject.fcFunctionPrototype);
 
         this.addProperty("prototype", globalObject.fcStringPrototype);
 
         this.isInternalFunction = true;
         this.name = "String";
 
-        fcInternals.StringPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        StringPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
             this.addProperty
             (
                 propertyName,
-                new fcInternals.fcValue
+                new Firecrow.N_Interpreter.fcValue
                 (
-                    FBL.Firecrow.INTERNAL_PROTOTYPE_FUNCTIONS.String[propertyName],
-                    fcInternals.Function.createInternalNamedFunction(globalObject, propertyName, this),
+                    Firecrow.INTERNAL_PROTOTYPE_FUNCTIONS.String[propertyName],
+                    Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, propertyName, this),
                     null
                 ),
                 null,
@@ -86,9 +85,9 @@
         }, this);
     };
 
-    fcInternals.StringFunction.prototype = new fcInternals.Object();
+    StringFunction.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcInternals.StringExecutor =
+    Firecrow.N_Interpreter.StringExecutor =
     {
         evaluateCallbackReturn: function(callbackCommand, returnValue, returnExpression, globalObject)
         {
@@ -115,7 +114,7 @@
                         return resultMapping[index++].jsValue;
                     });
 
-                    targetObject.iValue = new fcInternals.String(targetObject.jsValue, globalObject, returnExpression, true);
+                    targetObject.iValue = new String(targetObject.jsValue, globalObject, returnExpression, true);
                 }
 
                 globalObject.dependencyCreator.createDataDependency
@@ -142,7 +141,7 @@
             var functionName = functionObjectValue.name;
             var fcThisValue =  thisObject.iValue;
             var globalObject = fcThisValue != null ? fcThisValue.globalObject
-                : functionObjectValue.fcValue.iValue.globalObject;
+                                                   : functionObjectValue.fcValue.iValue.globalObject;
 
             if(ValueTypeHelper.isNumber(thisObjectValue) || ValueTypeHelper.isBoolean(thisObjectValue))
             {
@@ -189,7 +188,7 @@
                     var result = thisObjectValue[functionName].apply(thisObjectValue, argumentValues);
                     if(result == null)
                     {
-                        return new fcInternals.fcValue(null, null, callExpression);
+                        return new Firecrow.N_Interpreter.fcValue(null, null, callExpression);
                     }
                     else if (ValueTypeHelper.isArray(result))
                     {
@@ -266,7 +265,7 @@
             {
                 var fcThisValue =  thisObject.iValue;
                 var globalObject = fcThisValue != null ? fcThisValue.globalObject
-                    : functionObjectValue.fcValue.iValue.globalObject;
+                                                       : functionObjectValue.fcValue.iValue.globalObject;
 
                 var argumentValues = globalObject.getJsValues(args);
 
@@ -280,9 +279,9 @@
 
         isInternalStringFunctionMethod: function(functionObject)
         {
-            return fcInternals.StringPrototype.CONST.INTERNAL_PROPERTIES.METHODS.indexOf(functionObject.name) != -1;
+            return StringPrototype.CONST.INTERNAL_PROPERTIES.METHODS.indexOf(functionObject.name) != -1;
         },
 
-        notifyError: function(message) { debugger; fcInternals.String.notifyError(message); }
+        notifyError: function(message) { debugger; String.notifyError(message); }
     };
 })();

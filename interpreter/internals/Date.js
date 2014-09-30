@@ -1,7 +1,6 @@
 (function() {
 /*************************************************************************************/
-    var Date;
-    Firecrow.N_Interpreter.Date = Date = function(value, globalObject)
+    var Date = Firecrow.N_Interpreter.Date = function(value, globalObject)
     {
         this.initObject(globalObject);
         this.constructor = Date;
@@ -16,7 +15,7 @@
     var DatePrototype;
     Firecrow.N_Interpreter.DatePrototype = DatePrototype = function(globalObject)
     {
-        this.initObject(globalObject, null, Date.prototype, globalObject.fcObjectPrototype);
+        this.initObject(globalObject, null, window.Date.prototype, globalObject.fcObjectPrototype);
 
         this.constructor = DatePrototype;
         this.name = "DatePrototype";
@@ -30,7 +29,7 @@
                 propertyName,
                 new Firecrow.N_Interpreter.fcValue
                 (
-                    Date.prototype[propertyName],
+                    window.Date.prototype[propertyName],
                     Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, propertyName, this),
                     null
                 ),
@@ -65,10 +64,9 @@
 
     DatePrototype.prototype = new Firecrow.N_Interpreter.Object(null);
 
-    var DateFunction;
-    Firecrow.N_Interpreter.DateFunction = DateFunction = function(globalObject)
+    var DateFunction = Firecrow.N_Interpreter.DateFunction = function(globalObject)
     {
-        this.initObject(globalObject, null, Date, globalObject.fcFunctionPrototype);
+        this.initObject(globalObject, null, window.Date, globalObject.fcFunctionPrototype);
 
         this.addProperty("prototype", globalObject.fcDatePrototype);
 
@@ -84,7 +82,7 @@
         {
             return new Firecrow.N_Interpreter.fcValue
             (
-                Date[functionObject.value.name].apply(null, globalObject.getJsValues(args)),
+                window.Date[functionObject.value.name].apply(null, globalObject.getJsValues(args)),
                 null,
                 callExpression
             );

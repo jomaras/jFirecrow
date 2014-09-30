@@ -1,13 +1,14 @@
 (function() {
 /*************************************************************************************/
-    var fcModel = Firecrow.Interpreter.Model;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var FIRECROW_AJAX_PROXY_URL = "http://localhost/Firecrow/proxy/proxy.php";
 
-    fcModel.XMLHttpRequest = function(xmlHttpRequestObject, globalObject, codeConstruct)
+    var XMLHttpRequest = Firecrow.N_Interpreter.XMLHttpRequest = function(xmlHttpRequestObject, globalObject, codeConstruct)
     {
         this.initObject(globalObject, codeConstruct, xmlHttpRequestObject);
-        this.constructor = fcModel.XMLHttpRequest;
+
+        this.constructor = XMLHttpRequest;
+        this.name = "XMLHttpRequest";
 
         this.openConstruct = null;
         this.sendConstruct = null;
@@ -18,14 +19,13 @@
         this.addProperty("responseType", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, ""), codeConstruct);
         this.addProperty("responseText", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, ""), codeConstruct);
 
-        fcModel.XMLHttpRequestPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        XMLHttpRequestPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
             var internalFunction = globalObject.internalExecutor.createInternalFunction(XMLHttpRequest.prototype[propertyName], propertyName, this, true);
             this[propertyName] = internalFunction;
             this.addProperty(propertyName, internalFunction, null, false);
         }, this);
 
-        this.name = "XMLHttpRequest";
 
         this.updateToOpened = function(codeConstruct)
         {
@@ -69,27 +69,28 @@
         };
     };
 
-    fcModel.XMLHttpRequest.prototype = new fcModel.Object();
+    XMLHttpRequest.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcModel.XMLHttpRequestPrototype = function(globalObject)
+    var XMLHttpRequestPrototype = Firecrow.N_Interpreter.XMLHttpRequestPrototype = function(globalObject)
     {
         this.initObject(globalObject);
-        this.constructor = fcModel.XMLHttpRequestPrototype;
+
+        this.constructor = XMLHttpRequestPrototype;
         this.name = "XMLHttpRequestPrototype";
 
-        fcModel.XMLHttpRequestPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        XMLHttpRequestPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
-            var internalFunction = globalObject.internalExecutor.createInternalFunction(XMLHttpRequest.prototype[propertyName], propertyName, this, true);
+            var internalFunction = globalObject.internalExecutor.createInternalFunction(window.XMLHttpRequest.prototype[propertyName], propertyName, this, true);
             this[propertyName] = internalFunction;
             this.addProperty(propertyName, internalFunction, null, false);
         }, this);
     };
 
-    fcModel.XMLHttpRequest.notifyError = function(message) { alert("XMLHttpRequest - " + message); }
+    XMLHttpRequest.notifyError = function(message) { alert("XMLHttpRequest - " + message); }
 
-    fcModel.XMLHttpRequestPrototype.prototype = new fcModel.Object();
+    XMLHttpRequestPrototype.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcModel.XMLHttpRequestPrototype.CONST =
+    XMLHttpRequestPrototype.CONST =
     {
         INTERNAL_PROPERTIES :
         {
@@ -98,7 +99,7 @@
         }
     };
 
-    fcModel.XMLHttpRequestFunction = function(globalObject)
+    var XMLHttpRequestFunction = Firecrow.N_Interpreter.XMLHttpRequestFunction = function(globalObject)
     {
         this.initObject(globalObject);
 
@@ -108,9 +109,9 @@
         this.name = "XMLHttpRequest";
     };
 
-    fcModel.XMLHttpRequestFunction.prototype = new fcModel.Object();
+    XMLHttpRequestFunction.prototype = new Firecrow.N_Interpreter.Object();
 
-    fcModel.XMLHttpRequestExecutor =
+    Firecrow.N_Interpreter.XMLHttpRequestExecutor =
     {
         executeInternalXmlHttpRequestMethod: function(thisObject, functionObject, args, callExpression)
         {
@@ -261,7 +262,7 @@
             }
         },
 
-        notifyError: function(message) { debugger; Firecrow.Interpreter.Model.XMLHttpRequest.notifyError(message);}
+        notifyError: function(message) { debugger; XMLHttpRequest.notifyError(message);}
     };
     /*************************************************************************************/
 })();

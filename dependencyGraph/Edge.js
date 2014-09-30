@@ -25,22 +25,6 @@
         }
     };
 
-    Edge.prototype.getEdgeSignature = function()
-    {
-        var sourceSignature = this.sourceNode.model != null ? this.sourceNode.model.nodeId : -1;
-        var destinationSignature = this.destinationNode.model != null ? this.destinationNode.model.nodeId : -1;
-
-        return sourceSignature + "-" + destinationSignature;
-    };
-
-    Edge.prototype.getSimplified = function()
-    {
-        return {
-            sourceNodeId: this.sourceNode.model != null ? this.sourceNode.model.nodeId : -1,
-            destinationNodeId: this.destinationNode.model != null ? this.destinationNode.model.nodeId : -1
-        };
-    };
-
     Edge.notifyError = function(message) { alert("Edge - " + message); }
     /*************************************************************************************/
 })();

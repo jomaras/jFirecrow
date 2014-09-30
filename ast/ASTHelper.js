@@ -2,7 +2,7 @@
 {
     var DYNAMIC_CODE_ID = 0;
 
-    Firecrow.ASTHelper =
+    var ASTHelper = Firecrow.ASTHelper =
     {
         setNodeIdsAndParentChildRelationshipForEvaldCode: function(evalConstruct, programAST)
         {

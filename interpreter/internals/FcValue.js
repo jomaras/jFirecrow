@@ -1,9 +1,8 @@
 (function() {
     /*************************************************************************************/
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
-    var fcValue;
 
-    Firecrow.N_Interpreter.fcValue = fcValue = function(jsValue, iValue, codeConstruct, symbolicValue)
+    var fcValue = Firecrow.N_Interpreter.fcValue = function(jsValue, iValue, codeConstruct, symbolicValue)
     {
         this.id = fcValue.LAST_ID++;
         this.jsValue = jsValue;

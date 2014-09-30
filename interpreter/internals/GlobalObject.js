@@ -11,7 +11,7 @@
         this._expandToFcValue();
         ValueTypeHelper.expand(this, Firecrow.N_Interpreter.EventListenerMixin);
 
-        Firecrow.Interpreter.VariableObject.liftToVariableObject(this);
+        Firecrow.N_Interpreter.VariableObject.liftToVariableObject(this);
 
         this.internalExecutor = new Firecrow.N_Interpreter.InternalExecutor(this);
 
@@ -892,7 +892,7 @@
             this.addProperty
             (
                 methodName,
-                new fcModel.fcValue
+                new Firecrow.N_Interpreter.fcValue
                 (
                     this.origWindow[methodName] || eval(methodName),
                     Firecrow.N_Interpreter.Function.createInternalNamedFunction(this, methodName, this),
@@ -1092,12 +1092,10 @@
 
 (function() {
     /*************************************************************************************/
-    var fcModel = Firecrow.Interpreter.Model;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
-    var CommandGenerator = Firecrow.Interpreter.Commands.CommandGenerator;
 
-    GlobalObjectExecutor =
+    Firecrow.N_Interpreter.GlobalObjectExecutor =
     {
         executeInternalFunction: function(fcFunction, args, callExpression, globalObject)
         {

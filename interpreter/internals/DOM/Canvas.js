@@ -1,9 +1,7 @@
 (function(){
 /*************************************************************************************/
     //https://developer.mozilla.org/en-US/docs/DOM/CanvasRenderingContext2D
-
-    var CanvasPrototype;
-    Firecrow.N_Interpreter.CanvasPrototype = CanvasPrototype = function(globalObject)
+    var CanvasPrototype = Firecrow.N_Interpreter.CanvasPrototype = function(globalObject)
     {
         this.initObject(globalObject);
         this.constructor = CanvasPrototype;
@@ -14,7 +12,7 @@
             this.addProperty
             (
                 propertyName,
-                new fcInternals.fcValue
+                new Firecrow.N_Interpreter.fcValue
                 (
                     HTMLCanvasElement.prototype[propertyName],
                     Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, propertyName, this)
@@ -27,9 +25,7 @@
 
     CanvasPrototype.prototype = new Firecrow.N_Interpreter.Object();
 
-    var CanvasContext;
-
-    Firecrow.N_Interpreter.CanvasContext = CanvasContext = function(globalObject, canvasContext, canvas)
+    var CanvasContext = Firecrow.N_Interpreter.CanvasContext = function(globalObject, canvasContext, canvas)
     {
         this.initObject(globalObject);
         this.addProperty("__proto__", this.globalObject.fcCanvasContextPrototype);
@@ -39,7 +35,7 @@
         this.canvas = canvas;
     };
 
-    CanvasContext.prototype = new fcInternals.Object();
+    CanvasContext.prototype = new Firecrow.N_Interpreter.Object();
 
     CanvasContext.prototype.addJsProperty = function(propertyName, propertyValue, assignmentExpression)
     {
@@ -62,9 +58,7 @@
         ]
     };
 
-    var CanvasContextPrototype;
-
-    Firecrow.N_Interpreter.CanvasContextPrototype = CanvasContextPrototype = function(globalObject)
+    var CanvasContextPrototype = Firecrow.N_Interpreter.CanvasContextPrototype = function(globalObject)
     {
         this.initObject(globalObject);
 
@@ -88,11 +82,9 @@
         }, this);
     };
 
-    CanvasContextPrototype.prototype = new fcInternals.Object();
+    CanvasContextPrototype.prototype = new Firecrow.N_Interpreter.Object();
 
-    var CanvasExecutor;
-
-    Firecrow.N_Interpreter.CanvasExecutor = CanvasExecutor =
+    Firecrow.N_Interpreter.CanvasExecutor =
     {
         executeCanvasMethod: function(thisObject, functionObject, args, callExpression)
         {
@@ -112,7 +104,7 @@
         }
     };
 
-    fcInternals.CanvasContextExecutor =
+    Firecrow.N_Interpreter.CanvasContextExecutor =
     {
         executeInternalMethod: function(thisObject, functionObject, args, callExpression)
         {
@@ -157,12 +149,10 @@
         }
     };
 
-    var LinearGradient;
-
-    Firecrow.N_Interpreter.LinearGradient = LinearGradient = function(globalObject, canvasContext, canvas, linearGradient)
+    var LinearGradient = Firecrow.N_Interpreter.LinearGradient = function(globalObject, canvasContext, canvas, linearGradient)
     {
         this.initObject(globalObject);
-        this.constructor = fcInternals.LinearGradient;
+        this.constructor = LinearGradient;
 
         this.canvasContext = canvasContext;
         this.canvas = canvas;
@@ -187,9 +177,7 @@
         Firecrow.N_Interpreter.HtmlElementExecutor.addDependencyIfImportantElement(this.canvas, this.globalObject, assignmentExpression);
     };
 
-    var LinearGradientExecutor;
-
-    Firecrow.N_Interpreter.LinearGradientExecutor = LinearGradientExecutor =
+    Firecrow.N_Interpreter.LinearGradientExecutor =
     {
         executeInternalMethod: function(thisObject, functionObject, args, callExpression)
         {
@@ -209,8 +197,7 @@
         }
     };
 
-    var CanvasGradient;
-    Firecrow.N_Interpreter.CanvasGradient = CanvasGradient = function(globalObject, canvasContext, canvas, canvasGradient)
+    var CanvasGradient = Firecrow.N_Interpreter.CanvasGradient = function(globalObject, canvasContext, canvas, canvasGradient)
     {
         this.initObject(globalObject);
         this.constructor = CanvasGradient;
@@ -247,8 +234,7 @@
         Firecrow.N_Interpreter.HtmlElementExecutor.addDependencyIfImportantElement(this.canvas, this.globalObject, assignmentExpression);
     };
 
-    var CanvasGradientExecutor;
-    Firecrow.N_Interpreter.CanvasGradientExecutor = CanvasGradientExecutor =
+    Firecrow.N_Interpreter.CanvasGradientExecutor =
     {
         executeInternalMethod: function(thisObject, functionObject, args, callExpression)
         {
@@ -268,8 +254,7 @@
         }
     };
 
-    var ImageData;
-    Firecrow.N_Interpreter.ImageData = ImageData = function(globalObject, canvasContext, canvas, imageData)
+    var ImageData = Firecrow.N_Interpreter.ImageData = function(globalObject, canvasContext, canvas, imageData)
     {
         this.initObject(globalObject);
         this.constructor = ImageData;

@@ -1,16 +1,15 @@
 (function()
 {
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
-    var Attribute;
 
-    Firecrow.N_Interpreter.Attribute = Attribute = function(attribute, htmlElement, globalObject, codeConstruct)
+    var fAttribute = Firecrow.N_Interpreter.Attribute = function(attribute, htmlElement, globalObject, codeConstruct)
     {
         this.initObject(globalObject, codeConstruct, attribute);
 
         this.htmlElement = htmlElement;
         this.attribute = attribute;
 
-        this.constructor = fcInternals.Attribute;
+        this.constructor = fAttribute;
 
         this.addProperty("isId", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, this.attribute.isId), null);
         this.addProperty("localName", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, this.attribute.localName), null);
@@ -25,7 +24,7 @@
 
         this.registerAddPropertyCallback(function(propertyName, propertyValue, codeConstruct)
         {
-            fcInternals.HtmlElementExecutor.addDependencyIfImportantElement(this.htmlElement, this.globalObject, codeConstruct);
+            Firecrow.N_Interpreter.HtmlElementExecutor.addDependencyIfImportantElement(this.htmlElement, this.globalObject, codeConstruct);
         }, this);
 
         this.getJsPropertyValue = function(propertyName, codeConstruct)
@@ -38,13 +37,13 @@
             this.addProperty(propertyName, propertyFcValue, codeConstruct);
         };
     };
-    Attribute.notifyError = function(message) { debugger; alert("Attr - " + message); };
+    fAttribute.notifyError = function(message) { debugger; alert("Attr - " + message); };
 
-    Attribute.prototype = new fcInternals.Object();
+    fAttribute.prototype = new Firecrow.N_Interpreter.Object();
 
-    Attribute.wrapAttribute = function(attribute, globalObject, codeConstruct)
+    fAttribute.wrapAttribute = function(attribute, globalObject, codeConstruct)
     {
-        return new fcInternals.fcValue
+        return new Firecrow.N_Interpreter.fcValue
         (
             attribute,
             new Attribute(attribute, null, globalObject, codeConstruct),
@@ -52,11 +51,11 @@
         );
     };
 
-    Attribute.createAttributeList = function(htmlElement, globalObject, codeConstruct)
+    fAttribute.createAttributeList = function(htmlElement, globalObject, codeConstruct)
     {
         if(!ValueTypeHelper.isHtmlElement(htmlElement) && !ValueTypeHelper.isDocumentFragment(htmlElement))
         {
-            Attribute.notifyError("Attr - when creating attribute list, the argument has to be an HTMLElement!");
+            fAttribute.notifyError("Attr - when creating attribute list, the argument has to be an HTMLElement!");
         }
 
         var attributeList = [];
@@ -68,10 +67,10 @@
             for(var i = 0, length = attributes.length; i < length; i++)
             {
                 var attribute = attributes[i];
-                var fcAttribute = new fcInternals.fcValue
+                var fcAttribute = new Firecrow.N_Interpreter.fcValue
                 (
                     attribute,
-                    new Attribute(attribute, htmlElement, globalObject, codeConstruct),
+                    new fAttribute(attribute, htmlElement, globalObject, codeConstruct),
                     codeConstruct
                 );
 
@@ -94,7 +93,7 @@
     };
 
     //https://developer.mozilla.org/en/DOM/element
-    Attribute.CONST =
+    fAttribute.CONST =
     {
         INTERNAL_PROPERTIES :
         {

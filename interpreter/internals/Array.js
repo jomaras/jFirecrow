@@ -1,9 +1,8 @@
 (function()
 {
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
-    var Array;
 
-    Firecrow.N_Interpreter.Array = Array = function (jsArray, globalObject, codeConstruct)
+    var Array = Firecrow.N_Interpreter.Array = function (jsArray, globalObject, codeConstruct)
     {
         this.initObject(globalObject, codeConstruct, (this.jsArray = jsArray || []));
 
@@ -1017,7 +1016,6 @@
         }
     };
 
-
     Firecrow.N_Interpreter.ArrayFunction = function(globalObject)
     {
 
@@ -1039,8 +1037,8 @@
                 propertyName,
                 new Firecrow.N_Interpreter.fcValue
                 (
-                    FBL.Firecrow.INTERNAL_PROTOTYPE_FUNCTIONS.Array[propertyName],
-                    fcInternals.Function.createInternalNamedFunction(globalObject, propertyName, this),
+                    Firecrow.INTERNAL_PROTOTYPE_FUNCTIONS.Array[propertyName],
+                    Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, propertyName, this),
                     null
                 ),
                 null,
@@ -1051,10 +1049,9 @@
 
     Firecrow.N_Interpreter.ArrayFunction.prototype = new Firecrow.N_Interpreter.Object();
 
-    var ArrayPrototype;
-    Firecrow.N_Interpreter.ArrayPrototype = ArrayPrototype = function(globalObject)
+    var ArrayPrototype = Firecrow.N_Interpreter.ArrayPrototype = function(globalObject)
     {
-        this.initObject(globalObject, null, Array.prototype, globalObject.fcObjectPrototype);
+        this.initObject(globalObject, null, window.Array.prototype, globalObject.fcObjectPrototype);
 
         this.constructor = ArrayPrototype;
         this.name = "ArrayPrototype";
@@ -1068,7 +1065,7 @@
                 propertyName,
                 new Firecrow.N_Interpreter.fcValue
                 (
-                    Array.prototype[propertyName],
+                    window.Array.prototype[propertyName],
                     Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, propertyName, this),
                     null
                 ),
@@ -1078,7 +1075,7 @@
         }, this);
     };
 
-    ArrayPrototype.prototype = new fcInternals.Object();
+    ArrayPrototype.prototype = new Firecrow.N_Interpreter.Object();
 
     //https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array#Methods_2
     ArrayPrototype.CONST =

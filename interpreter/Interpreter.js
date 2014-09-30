@@ -5,9 +5,7 @@
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
 
-    var Interpreter;
-
-    Firecrow.N_Interpreter.Interpreter = Interpreter = function(programAst, globalObject, handlerInfo)
+    var Interpreter = Firecrow.N_Interpreter.Interpreter = function(programAst, globalObject, handlerInfo)
     {
         this.programAst = programAst;
         this.globalObject = globalObject;

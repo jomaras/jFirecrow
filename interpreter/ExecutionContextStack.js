@@ -3,20 +3,17 @@
     /*************************************************************************************/
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
-    var N_Interpreter = Firecrow.N_Interpreter;
 
-    var ExecutionContext;
-
-    Firecrow.N_Interpreter.ExecutionContext = ExecutionContext = function(variableObject, scopeChain, thisObject, globalObject, contextCreationCommand)
+    var ExecutionContext = Firecrow.N_Interpreter.ExecutionContext = function(variableObject, scopeChain, thisObject, globalObject, contextCreationCommand)
     {
         this.id = ExecutionContext.LAST_ID++;
 
         this.variableObject = variableObject || globalObject.globalVariableObject;
         this.thisObject = thisObject || globalObject;
 
-        if(this.thisObject != globalObject && !(this.thisObject instanceof N_Interpreter.fcValue))
+        if(this.thisObject != globalObject && !(this.thisObject instanceof Firecrow.N_Interpreter.fcValue))
         {
-            this.thisObject = new N_Interpreter.fcValue(this.thisObject.implementationObject, thisObject);
+            this.thisObject = new Firecrow.N_Interpreter.fcValue(this.thisObject.implementationObject, thisObject);
         }
 
         this.globalObject = globalObject;
@@ -33,7 +30,7 @@
 
     ExecutionContext.createGlobalExecutionContext = function(globalObject)
     {
-        return new N_Interpreter.ExecutionContext(globalObject, [], globalObject, globalObject);
+        return new Firecrow.N_Interpreter.ExecutionContext(globalObject, [], globalObject, globalObject);
     };
 
     ExecutionContext.LAST_ID = 0;
@@ -92,7 +89,7 @@
     };
 
 
-    N_Interpreter.ExecutionContextStack = function(globalObject, handlerInfo)
+    var ExecutionContextStack = Firecrow.N_Interpreter.ExecutionContextStack = function(globalObject, handlerInfo)
     {
         if(globalObject == null) { this.notifyError("GlobalObject can not be null when constructing execution context stack!"); return; }
 
@@ -106,15 +103,15 @@
         this.blockCommandStack = [];
         this.functionContextCommandsStack = [{functionContextBlockCommandsEvalPositions:[]}];
 
-        this.dependencyCreator = new N_Interpreter.DependencyCreator(globalObject, this);
+        this.dependencyCreator = new Firecrow.N_Interpreter.DependencyCreator(globalObject, this);
 
-        this.evaluator = new N_Interpreter.Evaluator(this);
+        this.evaluator = new Firecrow.N_Interpreter.Evaluator(this);
         this.evaluator.registerExceptionCallback(this._exceptionCallback, this);
 
         this._enterInitialContext(handlerInfo);
     };
 
-    N_Interpreter.ExecutionContextStack.prototype =
+    ExecutionContextStack.prototype =
     {
         getStackLines: function()
         {
@@ -248,10 +245,10 @@
 
             this.activeContext.registerIdentifier
             (
-                new N_Interpreter.Identifier
+                new Firecrow.N_Interpreter.Identifier
                 (
                     variableDeclarator.id.name,
-                    new N_Interpreter.fcValue(undefined, undefined, variableDeclarator),
+                    new Firecrow.N_Interpreter.fcValue(undefined, undefined, variableDeclarator),
                     variableDeclarator,
                     this.globalObject
                 )
@@ -263,7 +260,7 @@
             if(!ASTHelper.isFunctionDeclaration(functionDeclaration)) { this.notifyError("When registering a function, the argument has to be a function declaration"); return; }
 
             this.globalObject.browser.logConstructExecuted(functionDeclaration);
-            this.activeContext.registerIdentifier(new N_Interpreter.Identifier(functionDeclaration.id.name, this.createFunctionInCurrentContext(functionDeclaration), functionDeclaration, this.globalObject));
+            this.activeContext.registerIdentifier(new Firecrow.N_Interpreter.Identifier(functionDeclaration.id.name, this.createFunctionInCurrentContext(functionDeclaration), functionDeclaration, this.globalObject));
         },
 
         getIdentifier: function(identifierName, codeConstruct)
@@ -324,7 +321,7 @@
                     {
                         identifier.setValue(value, setCodeConstruct, keepOldValue);
 
-                        if(variableObject != this.globalObject && !ValueTypeHelper.isOfType(variableObject, N_Interpreter.VariableObject))
+                        if(variableObject != this.globalObject && !ValueTypeHelper.isOfType(variableObject, Firecrow.N_Interpreter.VariableObject))
                         {
                             variableObject[identifierName] = value;
                         }
@@ -339,7 +336,7 @@
                 }
             }
 
-            this.stack[0].registerIdentifier(new N_Interpreter.Identifier(identifierName, value, setCodeConstruct, this.globalObject));
+            this.stack[0].registerIdentifier(new Firecrow.N_Interpreter.Identifier(identifierName, value, setCodeConstruct, this.globalObject));
         },
 
         restoreIdentifier: function(identifierName)
@@ -403,7 +400,7 @@
 
             if(returnValue == null && ASTHelper.isCallExpression(codeConstruct))
             {
-                return new N_Interpreter.fcValue(undefined, undefined, codeConstruct);
+                return new Firecrow.N_Interpreter.fcValue(undefined, undefined, codeConstruct);
             }
 
             return returnValue;
@@ -452,7 +449,7 @@
 
         push: function(executionContext)
         {
-            if(!ValueTypeHelper.isOfType(executionContext, N_Interpreter.ExecutionContext)) { this.notifyError("Argument is not ExecutionContext!"); return; }
+            if(!ValueTypeHelper.isOfType(executionContext, Firecrow.N_Interpreter.ExecutionContext)) { this.notifyError("Argument is not ExecutionContext!"); return; }
 
             this.stack.push(executionContext);
 
@@ -770,9 +767,9 @@
 
             this.globalObject.browser.logEnteringFunction
             (
-                    enterFunctionCommand.parentFunctionCommand != null ? enterFunctionCommand.parentFunctionCommand.codeConstruct : null,
+                enterFunctionCommand.parentFunctionCommand != null ? enterFunctionCommand.parentFunctionCommand.codeConstruct : null,
                 functionConstruct,
-                N_Interpreter.ExecutionContext.LAST_ID
+                Firecrow.N_Interpreter.ExecutionContext.LAST_ID
             );
 
             if(enterFunctionCommand.isEnterEventHandler) { sentArgumentsValues = enterFunctionCommand.argumentValues; }
@@ -798,11 +795,11 @@
 
             this.push
             (
-                new N_Interpreter.ExecutionContext
+                new Firecrow.N_Interpreter.ExecutionContext
                 (
-                    N_Interpreter.VariableObject.createFunctionVariableObject
+                    Firecrow.N_Interpreter.VariableObject.createFunctionVariableObject
                     (
-                        functionConstruct.id != null ? new N_Interpreter.Identifier(functionConstruct.id.name, enterFunctionCommand.callee, functionConstruct, this.globalObject)
+                        functionConstruct.id != null ? new Firecrow.N_Interpreter.Identifier(functionConstruct.id.name, enterFunctionCommand.callee, functionConstruct, this.globalObject)
                         : null,
                         formalParameters,
                         enterFunctionCommand.callee,
@@ -843,7 +840,7 @@
             for(var i = 0; i < functionConstruct.params.length; i++)
             {
                 var param = functionConstruct.params[i];
-                var identifier = new N_Interpreter.Identifier(param.name, new N_Interpreter.fcValue(undefined, undefined, param), param, this.globalObject);
+                var identifier = new Firecrow.N_Interpreter.Identifier(param.name, new Firecrow.N_Interpreter.fcValue(undefined, undefined, param), param, this.globalObject);
                 identifier.isFunctionFormalParameter = true;
                 identifiers.push(identifier);
             }
@@ -897,7 +894,7 @@
 
         _evalStartWithCommand: function(startWithCommand)
         {
-            this.activeContext.pushToScopeChain(N_Interpreter.VariableObject.liftToVariableObject(this.getExpressionValue(startWithCommand.codeConstruct.object)));
+            this.activeContext.pushToScopeChain(Firecrow.N_Interpreter.VariableObject.liftToVariableObject(this.getExpressionValue(startWithCommand.codeConstruct.object)));
         },
 
         _evalEndWithCommand: function(endWithCommand)
@@ -905,7 +902,7 @@
             this.activeContext.popFromScopeChain();
         },
 
-        notifyError: function(message) { debugger; N_Interpreter.ExecutionContext.notifyError(message); }
+        notifyError: function(message) { debugger; ExecutionContext.notifyError(message); }
     };
     /*************************************************************************************/
 })();

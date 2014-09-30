@@ -1,10 +1,9 @@
 (function (){
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    var Object;
-    Firecrow.N_Interpreter.Object = Object = function() {};
+    var Object = Firecrow.N_Interpreter.Object = function() {};
 
-    fcInternals.Object.createObjectWithInit = function(globalObject, codeConstruct, implementationObject, proto)
+    Object.createObjectWithInit = function(globalObject, codeConstruct, implementationObject, proto)
     {
         return (new Object()).initObject(globalObject, codeConstruct, implementationObject, proto);
     }
@@ -876,7 +875,7 @@
         }, this);
     };
 
-    Firecrow.N_Interpreter.ObjectFunction.prototype = new fcInternals.Object();
+    Firecrow.N_Interpreter.ObjectFunction.prototype = new Object();
 
     Firecrow.N_Interpreter.ObjectFunction.CONST =
     {
@@ -898,7 +897,7 @@
         this.name = "ObjectPrototype";
     };
 
-    Firecrow.N_Interpreter.ObjectPrototype.prototype = new fcModel.Object();
+    Firecrow.N_Interpreter.ObjectPrototype.prototype = new Object();
     Firecrow.N_Interpreter.ObjectPrototype.prototype.initMethods = function()
     {
         Firecrow.N_Interpreter.ObjectPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
