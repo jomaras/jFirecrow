@@ -103,27 +103,11 @@
 
         this.dependencyCreator = new Firecrow.N_Interpreter.DependencyCreator(globalObject, this);
 
-        this.evaluator = new Firecrow.N_Interpreter.Evaluator(this);
-        this.evaluator.registerExceptionCallback(this._exceptionCallback, this);
-
         this._enterInitialContext(handlerInfo);
     };
 
     ExecutionContextStack.prototype =
     {
-        getStackLines: function()
-        {
-            var lines = "";
-
-            for(var i = 0; i < this.stack.length; i++)
-            {
-                if(i != 0) { lines += "-"; }
-                lines += this.stack[i].lastCommand.codeConstruct.loc.start.line;
-            }
-
-            return lines;
-        },
-
         destruct: function()
         {
             delete this.globalObject;
@@ -132,106 +116,8 @@
             delete this.stack;
 
             delete this.exceptionCallbacks;
-            delete this.blockCommandStack;
-            delete this.functionContextCommandsStack;
 
             delete this.dependencyCreator;
-
-            delete this.evaluator;
-        },
-
-        executeCommand: function(command)
-        {
-            if(!command.isEnterFunctionContextCommand()) { this.activeContext.lastCommand = command; }
-
-            if (command.isEnterFunctionContextCommand())
-            {
-                this.functionContextCommandsStack.push(command);
-                command.functionContextBlockCommandsEvalPositions = [];
-                this._addToBlockCommandStack(command);
-                this._enterFunctionContext(command);
-            }
-            else if (command.isExitFunctionContextCommand())
-            {
-                this._exitFunctionContext(command);
-                this._popTillLastFunctionContextCommand(command);
-                this.functionContextCommandsStack.pop();
-            }
-            else if (command.isStartWithStatementCommand())
-            {
-                this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct.object);
-                this._addToBlockCommandStack(command);
-                this._evalStartWithCommand(command);
-            }
-            else if(command.isStartDoWhileCommand())
-            {
-                this._addToBlockCommandStack(command);
-            }
-            else if (command.isEndWithStatementCommand()) { this._tryPopCommand(command); this._evalEndWithCommand(command); }
-            else if (command.isForStatementCommand() || command.isWhileStatementCommand() ||  command.isDoWhileStatementCommand())
-            {
-                this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct.test);
-                this._addToBlockCommandStack(command);
-            }
-            else if (command.isForUpdateStatementCommand()){}
-            else if (command.isIfStatementCommand())
-            {
-                this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct.test);
-                //this.globalObject.browser.callControlFlowProblematicReachedCallbacks(command.codeConstruct.test);
-                this._addToBlockCommandStack(command);
-            }
-            else if (command.isEndIfCommand()) { this._tryPopCommand(command);}
-            else if (command.isEndLoopStatementCommand()) { this._popLoop(command);}
-            else if (command.isEvalConditionalExpressionBodyCommand()) { }
-            else if (command.isEvalConditionalExpressionCommand()) { this._addToBlockCommandStack(command); }
-            else if (command.isEvalBreakCommand() || command.isEvalContinueCommand())
-            {
-                if(this.activeContext.id == 4582) {debugger; }
-                this.evaluator.evalBreakContinueCommand(command );
-                //if(command.id == 293413) debugger;
-                this._popTillBreakContinue(command.codeConstruct);
-            }
-            else if (command.isStartSwitchStatementCommand()) { this._addToBlockCommandStack(command); }
-            else if (command.isEndSwitchStatementCommand()) { this._tryPopCommand(command);}
-            else if (command.isCaseCommand()) {}
-            else if (command.isStartTryStatementCommand() || command.isEndTryStatementCommand()) { }
-            else if (command.isEvalNewExpressionCommand()){ this.dependencyCreator.addNewExpressionDependencies(command.codeConstruct);}
-            else if (command.isStartLogicalExpressionCommand()) { }
-            else if (command.isCallInternalConstructorCommand()) { this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct); }
-            else if (command.isCallCallbackMethodCommand()) {}
-            else if (command.isEvalCallExpressionCommand())
-            {
-                this.dependencyCreator.addCallExpressionDependencies(command.codeConstruct);
-                this.globalObject.browser.callExpressionEvaluatedCallbacks(command.codeConstruct.callee);
-            }
-            else if (command.isExecuteCallbackCommand()) { this.dependencyCreator.addCallbackDependencies(command.codeConstruct, command.callCallbackCommand.codeConstruct); }
-            else if (command.isLabelCommand()) { this._logLabelCommand(command) ;}
-            else if (command.isConvertToPrimitiveCommand()) {}
-            else if (command.isStartEvalCommand()) { this._addToBlockCommandStack(command); }
-            else
-            {
-                if (command.isEndEvalConditionalExpressionCommand()) { this._tryPopCommand(command); }
-                else if (command.isStartCatchStatementCommand()) { this._addToBlockCommandStack(command); }
-                else if (command.isEndCatchStatementCommand()) { this._tryPopCommand(command);}
-                else if(command.isEvalForInWhereCommand())
-                {
-                    this.dependencyCreator.addDependenciesToTopBlockConstructs(command.codeConstruct.right);
-                    this._addToBlockCommandStack(command);
-                }
-                else if (command.isEndLogicalExpressionCommand())
-                {
-                    if(ASTHelper.isAssignmentExpression(command.codeConstruct.parent))
-                    {
-                        this._addToFunctionContextBlockCommands(command);
-                    }
-                }
-                else if(command.isFinishEvalCommand())
-                {
-                    this._tryPopCommand(command);
-                }
-
-                this.evaluator.evaluateCommand(command);
-            }
         },
 
         registerIdentifier: function(variableDeclarator)
@@ -467,125 +353,6 @@
             });
         },
 
-        getTopBlockCommandConstructs: function()
-        {
-            //Loop, With, and If constructs are repeating and constant - makes more sense to link the blockStackConstructs with them, then on commands (which get created for each execution)
-            //on the other hand EnterFunctionContextCommand is linked to the call expression making the call, which differ makes more sense to link to a command
-            if(this.blockCommandStack.length == 0) { return []; }
-
-            var topCommand = this.blockCommandStack[this.blockCommandStack.length - 1];
-            var topConstruct = topCommand.codeConstruct;
-
-            if((topCommand.isEnterFunctionContextCommand() || topCommand.isStartSwitchStatementCommand() || topCommand.isStartCatchStatementCommand())
-                && topCommand.blockStackConstructs != null)
-            {
-                return topCommand.blockStackConstructs;
-            }
-
-            if(topConstruct.blockStackConstructs != null) { return topConstruct.blockStackConstructs; }
-
-            if(ASTHelper.isLoopStatement(topConstruct) || ASTHelper.isIfStatement(topConstruct)  || ASTHelper.isConditionalExpression(topConstruct))
-            {
-                return topConstruct.blockStackConstructs = ASTHelper.isForInStatement(topConstruct) ? [topConstruct.right]
-                    : [topConstruct.test];
-            }
-            else if(ASTHelper.isWithStatement(topConstruct))
-            {
-                return topConstruct.blockStackConstructs = [topConstruct.object];
-            }
-
-            if(topCommand.isEnterFunctionContextCommand())
-            {
-                return topCommand.blockStackConstructs = [topCommand.codeConstruct, topCommand.parentFunctionCommand.codeConstruct];
-            }
-            else if (topCommand.isStartSwitchStatementCommand())
-            {
-                topCommand.blockStackConstructs = [topConstruct.discriminant];
-
-                if(topCommand.matchedCaseCommand != null)
-                {
-                    topCommand.blockStackConstructs.push(topCommand.matchedCaseCommand.codeConstruct);
-
-                    if(topCommand.matchedCaseCommand.codeConstruct.test != null)
-                    {
-                        topCommand.blockStackConstructs.push(topCommand.matchedCaseCommand.codeConstruct.test);
-                    }
-                }
-
-                return topCommand.blockStackConstructs;
-            }
-            else if (topCommand.isStartCatchStatementCommand())
-            {
-                if(topCommand.exceptionArgument.exceptionGeneratingConstruct != null)
-                {
-                    return topCommand.blockStackConstructs = [topCommand.exceptionArgument.exceptionGeneratingConstruct];
-                }
-                else if(topCommand.exceptionArgument.codeConstruct != null)
-                {
-                    return topCommand.blockStackConstructs = [topCommand.exceptionArgument.codeConstruct];
-                }
-                else
-                {
-                    return topCommand.blockStackConstructs = [topCommand.codeConstruct.param];
-                }
-            }
-            else if (topCommand.isStartEvalCommand())
-            {
-                return topCommand.blockStackConstructs = [topCommand.codeConstruct];
-            }
-
-            this.notifyError("Should not be here when getting top block command @ " + topCommand.codeConstruct.loc.source);
-        },
-
-        getPreviouslyExecutedBlockConstructs: function()
-        {
-            var constructsEvalPositions = [];
-            var topFunctionContextCommand = this.functionContextCommandsStack[this.functionContextCommandsStack.length - 1];
-
-            if(topFunctionContextCommand == null || topFunctionContextCommand.functionContextBlockCommandsEvalPositions == null) { return constructsEvalPositions; }
-
-            var blockCommandsEvalPositionMapping = topFunctionContextCommand.functionContextBlockCommandsEvalPositions;
-
-            for(var i = 0, length = blockCommandsEvalPositionMapping.length; i < length; i++)
-            {
-                var mapping = blockCommandsEvalPositionMapping[i];
-
-                var codeConstruct = mapping.command.codeConstruct;
-
-                if(ASTHelper.isForStatement(codeConstruct) || ASTHelper.isWhileStatement(codeConstruct) || ASTHelper.isDoWhileStatement(codeConstruct)
-                    || ASTHelper.isIfStatement(codeConstruct))
-                {
-                    codeConstruct = codeConstruct.test;
-                }
-                else if(ASTHelper.isWithStatement(codeConstruct))
-                {
-                    codeConstruct = codeConstruct.object;
-                }
-                else if (ASTHelper.isSwitchStatement(codeConstruct))
-                {
-                    codeConstruct = codeConstruct.discriminant;
-                }
-                else if (ASTHelper.isLogicalExpression(codeConstruct))
-                {
-
-                }
-                else
-                {
-                    codeConstruct = null;
-                }
-
-                constructsEvalPositions.push({codeConstruct: codeConstruct, evaluationPositionId: mapping.evaluationPositionId});
-            }
-
-            return constructsEvalPositions;
-        },
-
-
-        _exceptionCallback: function(exceptionInfo)
-        {
-            this.callExceptionCallbacks(exceptionInfo);
-        },
-
         _enterInitialContext: function(handlerInfo)
         {
             this.handlerInfo = handlerInfo;
@@ -596,147 +363,8 @@
             }
             else
             {
-                this.enterEventHandlerContextCommand = fcCommands.Command.createEnterEventHandlerContextCommand(this.handlerInfo);
-                this._enterFunctionContext(this.enterEventHandlerContextCommand);
-            }
-        },
-
-        _popTillLastFunctionContextCommand: function(exitFunctionContextCommand)
-        {
-            if(this.blockCommandStack.length == 0) { this.notifyError("Error when popping function context commands from block stack - empty stack!"); return; }
-
-            var blockCommandStack = this.blockCommandStack;
-
-            for(var i = blockCommandStack.length - 1; i >= 0; i = blockCommandStack.length - 1)
-            {
-                var command = blockCommandStack[i];
-
-                blockCommandStack.pop();
-
-                if(command.codeConstruct == exitFunctionContextCommand.codeConstruct) { break; }
-            }
-
-            this._reevaluateEvaluationPositionId();
-        },
-
-        _popTillBreakContinue: function(codeConstruct)
-        {
-            if(this.blockCommandStack.length == 0) { this.notifyError("Error when popping break/continue commands from block stack - empty stack @" + codeConstruct.loc.source); return; }
-
-            if(ASTHelper.isBreakStatement(codeConstruct)) { this._popTillBreak(codeConstruct); }
-            else if (ASTHelper.isContinueStatement(codeConstruct)) { this._popTillContinue(codeConstruct); }
-            else { this.notifyError("When popping break continue, codeConstruct should be break or continue!"); }
-
-            this._reevaluateEvaluationPositionId();
-        },
-
-        _popTillBreak: function(codeConstruct)
-        {
-            var blockCommandStack = this.blockCommandStack;
-            var parentLoopOrSwitch = ASTHelper.getLoopOrSwitchParent(codeConstruct);
-
-            for(var i = blockCommandStack.length - 1; i >= 0; i = blockCommandStack.length - 1)
-            {
-                var command = blockCommandStack[i];
-
-                if((command.isLoopStatementCommand() || command.isStartSwitchStatementCommand())
-                    && command.codeConstruct == parentLoopOrSwitch)
-                {
-                    if(command.isStartDoWhileCommand()) { blockCommandStack.pop(); }
-                    break;
-                }
-
-                blockCommandStack.pop();
-            }
-        },
-
-        _popTillContinue: function(codeConstruct)
-        {
-            var blockCommandStack = this.blockCommandStack;
-            var loopParent = ASTHelper.getLoopParent(codeConstruct)
-
-            for(var i = blockCommandStack.length - 1; i >= 0; i = blockCommandStack.length - 1)
-            {
-                var command = blockCommandStack[i];
-
-                if(command.isLoopStatementCommand() && command.codeConstruct == loopParent)
-                {
-                    if(command.isStartDoWhileCommand()) { blockCommandStack.pop(); }
-
-                    break;
-                }
-
-                blockCommandStack.pop();
-            }
-        },
-
-        _popLoop: function(loopCommand)
-        {
-            this._tryPopCommand(loopCommand);
-            this._reevaluateEvaluationPositionId();
-        },
-
-        _tryPopCommand: function(baseCommand)
-        {
-            if(this.blockCommandStack.length == 0) { this.notifyError("Error when trying to a command from block stack - empty stack!"); return false; }
-
-            var lastCommand = this.blockCommandStack[this.blockCommandStack.length-1];
-
-            if(lastCommand != baseCommand.startCommand)
-            {
-                this.notifyError
-                (
-                        "When popping commands the top command has to be the same as the base command - TopCommand@"
-                        + lastCommand
-                        + " Base command@" + baseCommand
-                );
-
-                return false;
-            }
-
-            this.blockCommandStack.pop();
-        },
-
-        _logLabelCommand: function(command)
-        {
-            this.activeContext.logLabel(command.codeConstruct);
-        },
-
-        _addToBlockCommandStack: function(command)
-        {
-            if(command.isLoopStatementCommand() || command.isIfStatementCommand()) { this._addToFunctionContextBlockCommands(command); }
-
-            this.blockCommandStack.push(command);
-
-            if(command.isLoopStatementCommand() || command.isEnterFunctionContextCommand()) { this._reevaluateEvaluationPositionId(); }
-        },
-
-        _addToFunctionContextBlockCommands: function(command)
-        {
-            var topFunctionContextCommand = this.functionContextCommandsStack[this.functionContextCommandsStack.length - 1];
-
-            if(topFunctionContextCommand == null) { return; }
-
-            topFunctionContextCommand.functionContextBlockCommandsEvalPositions.push(
-                {
-                    command: command,
-                    evaluationPositionId: this.globalObject.getPreciseEvaluationPositionId()
-                });
-        },
-
-        _reevaluateEvaluationPositionId: function()
-        {
-            this.globalObject.evaluationPositionId = "root";
-
-            var blockCommandStack = this.blockCommandStack;
-
-            for(var i = 0, length = blockCommandStack.length; i < length; i++)
-            {
-                var command = blockCommandStack[i];
-                if(command.isLoopStatementCommand() || command.isEnterFunctionContextCommand())
-                {
-                    this.globalObject.evaluationPositionId += "-" + command.executionId + (command.isEnterFunctionContextCommand() ? "f" : "");
-                }
+                this.enterEventHandlerContextCommand = Firecrow.N_Interpreter.Command.createEnterEventHandlerContextCommand(this.handlerInfo);
+                this.enterFunctionContext(this.enterEventHandlerContextCommand);
             }
         },
 
@@ -745,9 +373,8 @@
             this.push(Firecrow.N_Interpreter.ExecutionContext.createGlobalExecutionContext(this.globalObject));
         },
 
-        _enterFunctionContext: function(enterFunctionCommand)
+        enterFunctionContext: function(enterFunctionCommand)
         {
-            if(!ValueTypeHelper.isOfType(enterFunctionCommand, fcCommands.Command) || !enterFunctionCommand.isEnterFunctionContextCommand()) { this.notifyError("Argument must be a enterFunctionContext command"); return; }
             if(enterFunctionCommand.callee == null) { this.notifyError("When processing enter function context the callee can not be null!"); return; }
 
             var callee = enterFunctionCommand.callee.iValue;
@@ -807,15 +434,6 @@
                     enterFunctionCommand
                 )
             );
-        },
-
-        _exitFunctionContext: function(exitFunctionContextCommand)
-        {
-            this.pop();
-
-            this.dependencyCreator.createExitFunctionDependencies(exitFunctionContextCommand.parentFunctionCommand);
-
-            this.globalObject.browser.logExitingFunction();
         },
 
         _getFormalParameters: function(functionConstruct)
@@ -884,16 +502,6 @@
             if(args == null) { return []; }
 
             return this.getExpressionsValues(args);
-        },
-
-        _evalStartWithCommand: function(startWithCommand)
-        {
-            this.activeContext.pushToScopeChain(Firecrow.N_Interpreter.VariableObject.liftToVariableObject(this.getExpressionValue(startWithCommand.codeConstruct.object)));
-        },
-
-        _evalEndWithCommand: function(endWithCommand)
-        {
-            this.activeContext.popFromScopeChain();
         },
 
         notifyError: function(message) { debugger; ExecutionContext.notifyError(message); }

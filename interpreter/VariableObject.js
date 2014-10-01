@@ -3,9 +3,8 @@
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
 
-    var VariableObject = Firecrow.N_Interpreter.VariableObject = function(executionContext)
+    var VariableObject = Firecrow.N_Interpreter.VariableObject = function()
     {
-        this.executionContext = executionContext;
         this.identifiers = [];
     };
 
@@ -59,7 +58,7 @@
             );
         },
 
-        deleteIdentifier: function(identifierName, codeConstruct)
+        deleteIdentifier: function(identifierName)
         {
             var identifier = this.getIdentifier(identifierName);
 

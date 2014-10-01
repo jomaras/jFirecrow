@@ -60,22 +60,220 @@
 
         _processCommand: function(command)
         {
-            if(command.isStartTryStatementCommand() || command.isEndTryStatementCommand()) { this._processTryCommand(command); }
-            if(command.isEvalThrowExpressionCommand())
+            switch(command.type)
             {
-                this._processThrowCommand(command);
-                this._removeCommandsAfterException(command);
-            }
-            if(command.isFinishEvalCommand(command))
-            {
-                command.lastEvaluatedConstruct = this._getLastEvaluatedConstruct();
-            }
+                case "DeclareVariable":
+                    this.executionContextStack.registerIdentifier(command.codeConstruct);
+                    break;
+                case "DeclareFunction":
+                    this.executionContextStack.registerFunctionDeclaration(command.codeConstruct);
+                    break;
+                case "ThisExpression":
+                    this.executionContextStack.setExpressionValue(command.codeConstruct, this.executionContextStack.activeContext.thisObject);
+                    break;
+                case "ArrayExpression":
+                case "ArrayExpressionItemCreation":
+                case "ObjectExpression":
+                case "ObjectPropertyCreation":
 
-            this.executionContextStack.executeCommand(command);
-            command.hasBeenExecuted = true;
+                case "StartWithStatement":
+                    this.executionContextStack.activeContext.pushToScopeChain
+                    (
+                        Firecrow.N_Interpreter.VariableObject.liftToVariableObject
+                        (
+                            this.executionContextStack.getExpressionValue(command.codeConstruct.object)
+                        )
+                    );
+                    break;
+                case "EndWithStatement":
+                    this.executionContextStack.activeContext.popFromScopeChain();
+                    break;
+
+                case "StartTryStatement":
+                case "EndTryStatement":
+                    this._processTryCommand(command);
+                    break;
+                case "StartCatchStatement":
+                case "EndCatchStatement":
+                case "StartSwitchStatement":
+                case "EndSwitchStatement":
+                case "Case":
+                case "FunctionExpressionCreation":
+                case "EvalSequenceExpression":
+                case "EvalUnaryExpression":
+                case "EvalBinaryExpression":
+                case "EvalAssignmentExpression":
+
+                    var assignmentExpression = command.codeConstruct;
+
+                    this.dependencyCreator.createAssignmentDependencies(command);
+
+                    var finalValue = this._getAssignmentValue(command);
+
+                         if (command.leftSide.type == "Identifier") { this._assignToIdentifier(command.leftSide, finalValue, assignmentExpression); }
+                    else if (command.leftSide.type == "MemberExpression") { this._assignToMemberExpression(command.leftSide, finalValue, assignmentExpression, command); }
+
+                    this.executionContextStack.setExpressionValue(assignmentExpression, finalValue);
+
+                    break;
+                case "EvalUpdateExpression":
+                case "EvalBreak":
+                    this.executionContextStack._popTillBreakContinue(command.codeConstruct);
+                    break;
+                case "EvalContinue":
+                case "EvalCallbackFunction":
+                case "StartEvalLogicalExpression":
+                case "EvalLogicalExpressionItem":
+                case "EndEvalLogicalExpression":
+                case "EvalConditionalExpression":
+                case "EndEvalConditionalExpression":
+                case "EvalNewExpression":
+                case "EvalCallExpression":
+                case "EnterFunctionContext":
+                    this.executionContextStack.enterFunctionContext(command);
+                    break;
+                case "ExitFunctionContext":
+                    this.executionContextStack.exitFunctionContext(command);
+                    break;
+                case "EvalMemberExpression":
+                    var memberExpression = command.codeConstruct;
+
+                    var object = this.executionContextStack.getExpressionValue(memberExpression.object);
+
+                    if(object == null || (object.jsValue == null && object != this.globalObject))
+                    {
+                        this._callExceptionCallbacks(command);
+                        break;
+                    }
+
+                    this.globalObject.browser.callExpressionEvaluatedCallbacks(memberExpression.object);
+
+                    var property = this.executionContextStack.getExpressionValue(memberExpression.property);
+                    var propertyValue = this._getPropertyValue(object, property, memberExpression);
+
+                    this.dependencyCreator.createMemberExpressionDependencies(object, property, propertyValue, memberExpression);
+
+                    this.executionContextStack.setExpressionValue(memberExpression, propertyValue);
+
+                    break;
+                case "EvalMemberExpressionProperty":
+                    var memberExpression = command.codeConstruct;
+                    var property = memberExpression.property;
+
+                    this.executionContextStack.setExpressionValue
+                    (
+                        property,
+                        memberExpression.computed ? this.executionContextStack.getExpressionValue(property)
+                                                  : this.globalObject.internalExecutor.createInternalPrimitiveObject(property, property.name)
+                    );
+
+                    break;
+                case "EvalReturnExpression":
+
+                case "EvalThrowExpression":
+                    this._processThrowCommand(command);
+                    this._removeCommandsAfterException(command);
+
+                    break;
+                case "EvalIdentifier":
+                    var identifierConstruct = command.codeConstruct;
+
+                    var identifier = this.executionContextStack.getIdentifier(identifierConstruct.name, identifierConstruct);
+                    var identifierValue = identifier != null ? identifier.value : null;
+                    this.executionContextStack.setExpressionValue
+                    (
+                        identifierConstruct,
+                        identifierValue != null && identifierValue.isPrimitive && identifierValue.isPrimitive() ? identifierValue.createCopy()
+                                                                                                                : identifierValue
+                    );
+
+                    if(identifier != null)
+                    {
+                        this.dependencyCreator.createIdentifierDependencies(identifier, identifierConstruct, this.globalObject.getPreciseEvaluationPositionId());
+                        this._checkSlicing(identifierConstruct);
+                    }
+
+                    break;
+                case "EvalLiteral":
+                    this.executionContextStack.setExpressionValue
+                    (
+                        command.codeConstruct,
+                        this.globalObject.internalExecutor.createInternalPrimitiveObject(command.codeConstruct, command.codeConstruct.value)
+                    );
+                    break;
+                case "EvalRegExLiteral":
+                    var regEx = command.regExLiteral instanceof RegExp ? command.regExLiteral : eval(command.regExLiteral);
+
+                    this.executionContextStack.setExpressionValue
+                    (
+                        command.codeConstruct,
+                        this.globalObject.internalExecutor.createRegEx(command.codeConstruct, regEx)
+                    );
+                    break;
+                case "IfStatement":
+                case "EndIf":
+                case "StartDoWhileStatement":
+                case "WhileStatement":
+                case "DoWhileStatement":
+                case "ForStatement":
+                case "ForUpdateStatement":
+                case "EndLoopStatement":
+                case "EvalForInWhere":
+                case "EvalConditionalExpressionBody":
+                case "CallInternalConstructor":
+                case "CallInternalFunction":
+                case "CallCallbackMethod":
+                case "ExecuteCallback":
+                case "ConvertToPrimitive":
+                case "Label":
+                case "FinishEval":
+                    command.lastEvaluatedConstruct = this._getLastEvaluatedConstruct();
+                    break;
+                case "StartEval":
+            }
 
             if (command.removesCommands) { this._processRemovingCommandsCommand(command); }
             if (command.generatesNewCommands) { this._processGeneratingNewCommandsCommand(command); }
+        },
+
+        _assignToIdentifier: function(identifier, finalValue, assignmentExpression)
+        {
+            if(this.globalObject.satisfiesIdentifierSlicingCriteria(identifier))
+            {
+                this.globalObject.browser.callImportantConstructReachedCallbacks(identifier);
+            }
+
+            this.executionContextStack.setIdentifierValue(identifier.name, finalValue, assignmentExpression);
+        },
+
+        _assignToMemberExpression: function(memberExpression, finalValue, assignmentExpression, command)
+        {
+            var object = this.executionContextStack.getExpressionValue(memberExpression.object);
+            var property = this.executionContextStack.getExpressionValue(memberExpression.property);
+
+            if(object == null || (object.jsValue == null && object != this.globalObject)) { this._callExceptionCallbacks(command); return; }
+
+            if (this._hasAddJsPropertyFunction(object))
+            {
+                object.iValue.addJsProperty(property.jsValue, finalValue, assignmentExpression);
+            }
+            else
+            {
+                object.iValue.addProperty(property.jsValue, finalValue, assignmentExpression, true);
+                object.jsValue[property.jsValue] = finalValue;
+            }
+
+            if(property.jsValue == "__proto__" || property.jsValue == "prototype")
+            {
+                object.jsValue[property.jsValue] = finalValue.jsValue;
+            }
+
+            var newProperty = object.iValue.getProperty(property.jsValue);
+
+            if(newProperty != null)
+            {
+                newProperty.modificationContext = this.executionContextStack.activeContext;
+            }
         },
 
         _getLastEvaluatedConstruct: function()
