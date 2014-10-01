@@ -1,23 +1,22 @@
 (function()
 {
-    var HTMLImageElement;
-    Firecrow.N_Interpreter.HTMLImageElement = HTMLImageElement = function(globalObject)
+    var fHTMLImageElement = Firecrow.N_Interpreter.HTMLImageElement = function(globalObject)
     {
         this.initObject(globalObject);
 
         this.addProperty("prototype", globalObject.fcHtmlImagePrototype);
 
         this.name = "HTMLImageElement";
-        this.constructor = HTMLImageElement;
+        this.constructor = fHTMLImageElement;
     };
 
-    HTMLImageElement.prototype = new Firecrow.N_Interpreter.Object();
-    HTMLImageElement.notifyError = function(message) { alert("HTMLImageElement - " + message);};
+    fHTMLImageElement.prototype = new Firecrow.N_Interpreter.Object();
+    fHTMLImageElement.notifyError = function(message) { alert("HTMLImageElement - " + message);};
 
-    var HTMLImageElementPrototype;
-    Firecrow.N_Interpreter.HTMLImageElementPrototype = HTMLImageElementPrototype = function(globalObject)
+    var HTMLImageElementPrototype = Firecrow.N_Interpreter.HTMLImageElementPrototype = function(globalObject)
     {
         this.initObject(globalObject);
+
         this.constructor = HTMLImageElementPrototype;
         this.name = "HTMLImageElementPrototype";
     };

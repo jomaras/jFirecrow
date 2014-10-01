@@ -1,10 +1,10 @@
 (function() {
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    var RegEx = Firecrow.N_Interpreter.RegEx = function(jsRegExp, globalObject, codeConstruct)
+    var fRegEx = Firecrow.N_Interpreter.RegEx = function(jsRegExp, globalObject, codeConstruct)
     {
         this.jsRegExp = jsRegExp;
-        this.constructor = RegEx;
+        this.constructor = fRegEx;
 
         this.initObject(globalObject, codeConstruct, jsRegExp, globalObject.fcRegExPrototype);
 
@@ -61,18 +61,18 @@
         }
     };
 
-    RegEx.notifyError = function(message) { alert("RegEx - " + message); }
-    RegEx.prototype = new Firecrow.N_Interpreter.Object();
+    fRegEx.notifyError = function(message) { alert("RegEx - " + message); }
+    fRegEx.prototype = new Firecrow.N_Interpreter.Object();
 
     var RegExPrototype = Firecrow.N_Interpreter.RegExPrototype = function(globalObject)
     {
-        this.initObject(globalObject, null, window.RegExp.prototype, globalObject.fcObjectPrototype);
+        this.initObject(globalObject, null, RegExp.prototype, globalObject.fcObjectPrototype);
         this.constructor = RegExPrototype;
         this.name = "RegExPrototype";
 
         RegExPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
-            var internalFunction = globalObject.internalExecutor.createInternalFunction(window.RegExp.prototype[propertyName], propertyName, this, true);
+            var internalFunction = globalObject.internalExecutor.createInternalFunction(RegExp.prototype[propertyName], propertyName, this, true);
             this[propertyName] = internalFunction;
             this.addProperty(propertyName, internalFunction, null, false);
         }, this);
@@ -91,7 +91,7 @@
 
     var RegExFunction = Firecrow.N_Interpreter.RegExFunction = function(globalObject)
     {
-        this.initObject(globalObject, null, window.RegExp, globalObject.fcFunctionPrototype);
+        this.initObject(globalObject, null, RegExp, globalObject.fcFunctionPrototype);
 
         this.addProperty("prototype", globalObject.fcRegExPrototype);
 
@@ -152,6 +152,6 @@
             }
         },
 
-        notifyError: function(message) { RegEx.notifyError(message);}
+        notifyError: function(message) { fRegEx.notifyError(message);}
     };
 })();

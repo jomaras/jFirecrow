@@ -1,23 +1,22 @@
 (function() {
-/*************************************************************************************/
 
-    var Function = Firecrow.N_Interpreter.Function = function(globalObject, scopeChain, codeConstruct, value)
+    var fFunction = Firecrow.N_Interpreter.Function = function(globalObject, scopeChain, codeConstruct, value)
     {
         this.initObject(globalObject, codeConstruct, value);
 
         this.object = this;
         this.codeConstruct = codeConstruct;
         this.scopeChain = scopeChain;
+        this.constructor = fFunction;
 
         this.value = value;
 
         this._setDefaultProperties();
     };
-    Function.prototype = new Firecrow.N_Interpreter.Object();
 
-    Function.createInternalNamedFunction = function(globalObject, name, ownerObject)
+    fFunction.createInternalNamedFunction = function(globalObject, name, ownerObject)
     {
-        var functionObject = new Function(globalObject, []);
+        var functionObject = new fFunction(globalObject, []);
 
         functionObject.name = name;
         functionObject.isInternalFunction = true;
@@ -26,9 +25,11 @@
         return functionObject;
     };
 
-    Function.notifyError = function(message) { alert("Function - " + message); };
+    fFunction.notifyError = function(message) { alert("Function - " + message); };
 
-    Function.prototype.bind = function(args, callExpression)
+    fFunction.prototype = new Firecrow.N_Interpreter.Object();
+
+    fFunction.prototype.bind = function(args, callExpression)
     {
         this.isBound = true;
         this.bounder = args[0];
@@ -36,11 +37,11 @@
         this.bindingExpression = callExpression;
     };
 
-    Function.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
+    fFunction.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
     {
         return this.getPropertyValue(propertyName, codeConstruct);
     };
-    Function.prototype._setDefaultProperties = function()
+    fFunction.prototype._setDefaultProperties = function()
     {
         this.addProperty("prototype", this.globalObject.internalExecutor.createNonConstructorObject(this.codeConstruct, this.value != null ? this.value.prototype : null));
         this.addProperty("__proto__", this.globalObject.fcFunctionPrototype);
@@ -48,7 +49,7 @@
         this._setLengthProperty();
     };
 
-    Function.prototype._setLengthProperty = function()
+    fFunction.prototype._setLengthProperty = function()
     {
         var length = 0;
 
@@ -59,7 +60,6 @@
 
         this.addProperty("length", this.globalObject.internalExecutor.createInternalPrimitiveObject(this.codeConstruct, length), this.codeConstruct, false);
     };
-
 
     var FunctionPrototype = Firecrow.N_Interpreter.FunctionPrototype = function(globalObject)
     {
@@ -83,8 +83,8 @@
                     propertyName,
                     new Firecrow.N_Interpreter.fcValue
                     (
-                        window.Function.prototype[propertyName],
-                        Function.createInternalNamedFunction(this.globalObject, propertyName, this),
+                        Function.prototype[propertyName],
+                        fFunction.createInternalNamedFunction(this.globalObject, propertyName, this),
                         null
                     ),
                     null,
@@ -92,7 +92,7 @@
                 );
             }
         }, this);
-    }
+    };
 
     FunctionPrototype.CONST =
     {
@@ -102,10 +102,9 @@
         }
     };
 
-
     Firecrow.N_Interpreter.FunctionFunction = function(globalObject)
     {
-        this.initObject(globalObject, null, window.Function, globalObject.fcFunctionPrototype);
+        this.initObject(globalObject, null, Function, globalObject.fcFunctionPrototype);
 
         this.addProperty("prototype", this.globalObject.fcFunctionPrototype);
 

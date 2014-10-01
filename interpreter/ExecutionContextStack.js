@@ -24,8 +24,6 @@
         this.codeConstructValuesMapping = {};
         this.labelsMapping = {};
         this.commands = [];
-
-        this.contextCreationCommand = contextCreationCommand;
     };
 
     ExecutionContext.createGlobalExecutionContext = function(globalObject)
@@ -78,6 +76,8 @@
 
             delete this.codeConstructValuesMapping;
             delete this.commands;
+
+            delete this.labelsMapping;
         },
 
         logLabel: function(labelConstruct)
@@ -100,8 +100,6 @@
         this.stack = [];
 
         this.exceptionCallbacks = [];
-        this.blockCommandStack = [];
-        this.functionContextCommandsStack = [{functionContextBlockCommandsEvalPositions:[]}];
 
         this.dependencyCreator = new Firecrow.N_Interpreter.DependencyCreator(globalObject, this);
 
@@ -240,9 +238,6 @@
         {
             if(!ASTHelper.isVariableDeclarator(variableDeclarator)) { this.notifyError("ExecutionContextStack: When registering an identifier, the argument has to be variable declarator"); }
 
-            this.globalObject.browser.logConstructExecuted(variableDeclarator);
-            this.globalObject.browser.logConstructExecuted(variableDeclarator.id)
-
             this.activeContext.registerIdentifier
             (
                 new Firecrow.N_Interpreter.Identifier
@@ -259,7 +254,6 @@
         {
             if(!ASTHelper.isFunctionDeclaration(functionDeclaration)) { this.notifyError("When registering a function, the argument has to be a function declaration"); return; }
 
-            this.globalObject.browser.logConstructExecuted(functionDeclaration);
             this.activeContext.registerIdentifier(new Firecrow.N_Interpreter.Identifier(functionDeclaration.id.name, this.createFunctionInCurrentContext(functionDeclaration), functionDeclaration, this.globalObject));
         },
 
@@ -421,8 +415,8 @@
         getBaseObject: function(codeConstruct)
         {
             if(ASTHelper.isIdentifier(codeConstruct) || ASTHelper.isFunctionExpression(codeConstruct)
-                || ASTHelper.isLogicalExpression(codeConstruct) || ASTHelper.isConditionalExpression(codeConstruct)
-                || ASTHelper.isThisExpression(codeConstruct))
+            || ASTHelper.isLogicalExpression(codeConstruct) || ASTHelper.isConditionalExpression(codeConstruct)
+            || ASTHelper.isThisExpression(codeConstruct))
             {
                 return this.globalObject;
             }
@@ -748,7 +742,7 @@
 
         _enterGlobalContext: function()
         {
-            this.push(N_Interpreter.ExecutionContext.createGlobalExecutionContext(this.globalObject));
+            this.push(Firecrow.N_Interpreter.ExecutionContext.createGlobalExecutionContext(this.globalObject));
         },
 
         _enterFunctionContext: function(enterFunctionCommand)

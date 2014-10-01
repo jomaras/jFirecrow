@@ -2,11 +2,11 @@
 {
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    var Array = Firecrow.N_Interpreter.Array = function (jsArray, globalObject, codeConstruct)
+    var fArray = Firecrow.N_Interpreter.Array = function (jsArray, globalObject, codeConstruct)
     {
         this.initObject(globalObject, codeConstruct, (this.jsArray = jsArray || []));
 
-        this.constructor = Array;
+        this.constructor = fArray;
         this.items = [];
 
         this._addDefaultProperties();
@@ -15,15 +15,11 @@
         this._registerCallbacks();
     };
 
-    Array.notifyError = function (message)
-    {
-        debugger;
-        alert("Array - " + message);
-    };
+    fArray.notifyError = function (message) { debugger; alert("Array - " + message); };
 
-    Array.prototype = new Firecrow.N_Interpreter.Object();
+    fArray.prototype = new Firecrow.N_Interpreter.Object();
 
-    Array.prototype.removePrototypeMethods = function ()
+    fArray.prototype.removePrototypeMethods = function ()
     {
         Firecrow.N_Interpreter.ArrayPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function (propertyName)
         {
@@ -31,7 +27,7 @@
         }, this);
     };
 
-    Array.prototype.markAsNodeList = function ()
+    fArray.prototype.markAsNodeList = function ()
     {
         this.isNodeList = true;
 
@@ -45,11 +41,11 @@
         this.removePrototypeMethods();
     };
 
-    Array.prototype.push = function (jsArray, args, codeConstruct, fcValue, dontFillJsArray)
+    fArray.prototype.push = function (jsArray, args, codeConstruct, fcValue, dontFillJsArray)
     {
         this.addDependenciesToAllProperties(codeConstruct);
 
-        var isCalledOnArray = this.constructor === Array;
+        var isCalledOnArray = this.constructor === fArray;
 
         if (args != null && args.isNodeList && this.globalObject.throwsExceptionOnPushWithNodeList)
         {
@@ -103,10 +99,10 @@
         return lengthValue;
     };
 
-    Array.prototype.pop = function (jsArray, args, codeConstruct)
+    fArray.prototype.pop = function (jsArray, args, codeConstruct)
     {
         this.addDependenciesToAllProperties(codeConstruct);
-        var isCalledOnArray = this.constructor == Array;
+        var isCalledOnArray = this.constructor == fArray;
 
         if (!isCalledOnArray)
         {
@@ -135,11 +131,11 @@
         return poppedItem;
     };
 
-    Array.prototype.reverse = function (jsArray, args, codeConstruct, fcValue)
+    fArray.prototype.reverse = function (jsArray, args, codeConstruct, fcValue)
     {
         this.addDependenciesToAllProperties(codeConstruct);
 
-        var isCalledOnArray = this.constructor == Array;
+        var isCalledOnArray = this.constructor == fArray;
 
         if (!isCalledOnArray)
         {
@@ -161,17 +157,17 @@
         }
         else
         {
-            fcInternals.Array.notifyError("Not handling reverse on non arrays!");
+            fArray.notifyError("Not handling reverse on non arrays!");
         }
 
         return fcValue;
     };
 
-    Array.prototype.shift = function (jsArray, args, codeConstruct)
+    fArray.prototype.shift = function (jsArray, args, codeConstruct)
     {
         this.addDependenciesToAllProperties(codeConstruct);
 
-        var isCalledOnArray = this.constructor == Array;
+        var isCalledOnArray = this.constructor == fArray;
 
         if (!isCalledOnArray)
         {
@@ -209,11 +205,11 @@
         return shiftedItem;
     };
 
-    Array.prototype.unshift = function (jsArray, callArguments, callExpression)
+    fArray.prototype.unshift = function (jsArray, callArguments, callExpression)
     {
         this.addDependenciesToAllProperties(callExpression);
 
-        var isCalledOnArray = this.constructor == Array;
+        var isCalledOnArray = this.constructor == fArray;
 
         if (!isCalledOnArray) {
             alert("Unshift called on non-array!");
@@ -246,11 +242,11 @@
         return lengthValue;
     };
 
-    Array.prototype.sort = function (jsArray, args, codeConstruct, fcValue)
+    fArray.prototype.sort = function (jsArray, args, codeConstruct, fcValue)
     {
         this.addDependenciesToAllProperties(codeConstruct);
 
-        var isCalledOnArray = this.constructor == Array;
+        var isCalledOnArray = this.constructor == fArray;
 
         if (!isCalledOnArray) { alert("Sort called on non-array!"); }
 
@@ -291,11 +287,11 @@
         return fcValue;
     };
 
-    Array.prototype.splice = function (jsArray, args, codeConstruct)
+    fArray.prototype.splice = function (jsArray, args, codeConstruct)
     {
         this.addDependenciesToAllProperties(codeConstruct);
 
-        var isCalledOnArray = this.constructor == Array;
+        var isCalledOnArray = this.constructor == fArray;
 
         if (!isCalledOnArray)
         {
@@ -337,7 +333,7 @@
         return this.globalObject.internalExecutor.createArray(codeConstruct, splicedItems);
     };
 
-    Array.prototype._spliceOnNonArray = function (jsArray, args, codeConstruct)
+    fArray.prototype._spliceOnNonArray = function (jsArray, args, codeConstruct)
     {
         this.addDependencyToAllModifications(codeConstruct);
         if (jsArray.length != null)
@@ -363,7 +359,7 @@
 
         var oldLength = jsArray.length;
 
-        var resultArray = Array.prototype.splice.apply(jsArray, adjustedArguments);
+        var resultArray = fArray.prototype.splice.apply(jsArray, adjustedArguments);
 
         var newLength = jsArray.length;
 
@@ -382,11 +378,11 @@
         return this.globalObject.internalExecutor.createArray(codeConstruct, resultArray);
     };
 
-    Array.prototype.concat = function (jsArray, callArguments, callExpression)
+    fArray.prototype.concat = function (jsArray, callArguments, callExpression)
     {
         this.addDependenciesToAllProperties(callExpression);
 
-        var isCalledOnArray = this.constructor == Array || this == this.globalObject.arrayPrototype;
+        var isCalledOnArray = this.constructor == fArray || this == this.globalObject.arrayPrototype;
 
         var lengthProperty = this.getPropertyValue("length");
         var length = lengthProperty != null ? lengthProperty.jsValue : 0;
@@ -425,10 +421,10 @@
         return newArray;
     };
 
-    Array.prototype.slice = function (jsArray, callArguments, callExpression)
+    fArray.prototype.slice = function (jsArray, callArguments, callExpression)
     {
         this.addDependenciesToAllProperties(callExpression);
-        var isCalledOnArray = this.constructor == Array;
+        var isCalledOnArray = this.constructor == fArray;
 
         var lengthProperty = this.getProperty("length");
         var length = lengthProperty != null ? lengthProperty.value.jsValue : 0;
@@ -468,10 +464,10 @@
         );
     };
 
-    Array.prototype.indexOf = function (jsArray, callArguments, callExpression)
+    fArray.prototype.indexOf = function (jsArray, callArguments, callExpression)
     {
         this.addDependenciesToAllProperties(callExpression);
-        var isCalledOnArray = this.constructor == Array;
+        var isCalledOnArray = this.constructor == fArray;
 
         var lengthProperty = this.getProperty("length");
         var lengthPropertyValue = lengthProperty.value;
@@ -528,10 +524,10 @@
         return this.globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, -1);
     };
 
-    Array.prototype.lastIndexOf = function (jsArray, callArguments, callExpression)
+    fArray.prototype.lastIndexOf = function (jsArray, callArguments, callExpression)
     {
         this.addDependenciesToAllProperties(callExpression);
-        var isCalledOnArray = this.constructor == Array;
+        var isCalledOnArray = this.constructor == fArray;
 
         if (!isCalledOnArray) { alert("lastIndexOf called on non-array!"); }
 
@@ -552,10 +548,10 @@
         return this.globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, -1);
     };
 
-    Array.prototype.join = function (jsArray, callArguments, callExpression)
+    fArray.prototype.join = function (jsArray, callArguments, callExpression)
     {
         this.addDependenciesToAllProperties(callExpression);
-        var isCalledOnArray = this.constructor == Array;
+        var isCalledOnArray = this.constructor == fArray;
 
         if (!isCalledOnArray) {
             alert("join called on non-array!");
@@ -576,12 +572,12 @@
         return this.globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, result);
     };
 
-    Array.prototype.getJsPropertyValue = function (propertyName, codeConstruct)
+    fArray.prototype.getJsPropertyValue = function (propertyName, codeConstruct)
     {
         return this.getPropertyValue(propertyName, codeConstruct);
     };
 
-    Array.prototype.addJsProperty = function (propertyName, propertyValue, codeConstruct)
+    fArray.prototype.addJsProperty = function (propertyName, propertyValue, codeConstruct)
     {
         if (ValueTypeHelper.isInteger(propertyName))
         {
@@ -622,7 +618,7 @@
         }
     };
 
-    Array.prototype._registerCallbacks = function ()
+    fArray.prototype._registerCallbacks = function ()
     {
         this.registerGetPropertyCallback(function (getPropertyConstruct)
         {
@@ -645,7 +641,7 @@
         );
     };
 
-    Array.prototype._addDefaultProperties = function ()
+    fArray.prototype._addDefaultProperties = function ()
     {
         this.addProperty("length", this.globalObject.internalExecutor.createInternalPrimitiveObject(this.creationCodeConstruct, 0), this.creationCodeConstruct, false);
         this.addProperty("__proto__", this.globalObject.fcArrayPrototype, null, false);
@@ -653,7 +649,7 @@
         this._addRegExResultArrayProperties();
     };
 
-    Array.prototype._addRegExResultArrayProperties = function ()
+    fArray.prototype._addRegExResultArrayProperties = function ()
     {
         if (this.jsArray.hasOwnProperty("index"))
         {
@@ -665,7 +661,7 @@
         }
     };
 
-    Array.prototype._addPreexistingObjects = function ()
+    fArray.prototype._addPreexistingObjects = function ()
     {
         var dependencyCreator = this.globalObject.dependencyCreator;
 
@@ -686,8 +682,6 @@
             }
         }
     };
-
-    var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
     Firecrow.N_Interpreter.ArrayCallbackEvaluator =
     {
@@ -713,7 +707,7 @@
             else
             {
                 debugger;
-                fcInternals.Array.notifyError("Unknown callbackFunction!");
+                fArray.notifyError("Unknown callbackFunction!");
             }
         },
 
@@ -721,7 +715,7 @@
         {
             var targetObjectValue = targetObject.jsValue;
 
-            if(!ValueTypeHelper.isArray(targetObjectValue)) { Array.notifyError("A new array should be created when calling filter: "); return; }
+            if(!ValueTypeHelper.isArray(targetObjectValue)) { fArray.notifyError("A new array should be created when calling filter: "); return; }
 
             if(returnValue != null && returnValue.jsValue)
             {
@@ -733,7 +727,7 @@
         {
             var targetObjectValue = targetObject.jsValue;
 
-            if(!ValueTypeHelper.isArray(targetObjectValue)) { Array.notifyError("A new array should be created when calling filter: "); return; }
+            if(!ValueTypeHelper.isArray(targetObjectValue)) { fArray.notifyError("A new array should be created when calling filter: "); return; }
 
             targetObject.iValue.push(targetObjectValue, [returnValue], valueExpression.argument || valueExpression);
         },
@@ -820,7 +814,7 @@
     {
         executeInternalArrayMethod : function(thisObject, functionObject, args, callExpression, callCommand)
         {
-            if(!functionObject.isInternalFunction) { Array.notifyError("The function should be internal when executing array method!"); return; }
+            if(!functionObject.isInternalFunction) { fArray.notifyError("The function should be internal when executing array method!"); return; }
 
             var functionObjectValue = functionObject.jsValue;
             var thisObjectValue = thisObject.jsValue;
@@ -828,7 +822,7 @@
             var fcThisValue =  thisObject.iValue;
             var globalObject = thisObject.iValue.globalObject;
 
-            var isCalledOnArray = fcThisValue.constructor == Array;
+            var isCalledOnArray = fcThisValue.constructor == fArray;
 
             if(functionName == "reduce" || functionName == "reduceRight")
             {
@@ -859,12 +853,12 @@
                 case "indexOf":
                 case "lastIndexOf":
                 case "join":
-                    return Array.prototype[functionName].apply(fcThisValue, [thisObjectValue, args, callExpression, thisObject]);
+                    return fArray.prototype[functionName].apply(fcThisValue, [thisObjectValue, args, callExpression, thisObject]);
                 case "sort":
                     //If there is no function argument to sort, execute the internal sort method
                     if(args == null || args.length == 0)
                     {
-                        return Array.prototype[functionName].apply(fcThisValue, [thisObjectValue, args, callExpression, thisObject]);
+                        return fArray.prototype[functionName].apply(fcThisValue, [thisObjectValue, args, callExpression, thisObject]);
                     }
                 case "forEach":
                 case "filter":
@@ -1051,7 +1045,7 @@
 
     var ArrayPrototype = Firecrow.N_Interpreter.ArrayPrototype = function(globalObject)
     {
-        this.initObject(globalObject, null, window.Array.prototype, globalObject.fcObjectPrototype);
+        this.initObject(globalObject, null, Array.prototype, globalObject.fcObjectPrototype);
 
         this.constructor = ArrayPrototype;
         this.name = "ArrayPrototype";

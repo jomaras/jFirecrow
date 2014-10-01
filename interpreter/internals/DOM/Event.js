@@ -1,14 +1,13 @@
 (function()
 {
-    /*************************************************************************************/
-    var Event = Firecrow.N_Interpreter.Event = function(implementationObject, globalObject, eventThisObject)
+    var fEvent = Firecrow.N_Interpreter.Event = function(implementationObject, globalObject, eventThisObject)
     {
         this.initObject(globalObject, null, implementationObject);
 
-        this.constructor = Event;
+        this.constructor = fEvent;
         this.eventThisObject = eventThisObject;
 
-        Event.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(method)
+        fEvent.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(method)
         {
             this.addProperty(method, this.globalObject.internalExecutor.createInternalFunction
             (
@@ -19,21 +18,21 @@
         }, this);
     };
 
-    Event.prototype = new Firecrow.N_Interpreter.Object();
+    fEvent.prototype = new Firecrow.N_Interpreter.Object();
 
-    Event.prototype.getJsPropertyValue = function (propertyName, codeConstruct)
+    fEvent.prototype.getJsPropertyValue = function (propertyName, codeConstruct)
     {
         return this.getPropertyValue(propertyName, codeConstruct);
     };
 
-    Event.prototype.addJsProperty = function(propertyName, propertyValue, codeConstruct, isEnumerable)
+    fEvent.prototype.addJsProperty = function(propertyName, propertyValue, codeConstruct, isEnumerable)
     {
         this.addProperty(propertyName, propertyValue, codeConstruct, isEnumerable);
     };
 
-    Event.notifyError = function(message) { alert("Event - " + message); }
+    fEvent.notifyError = function(message) { alert("Event - " + message); }
 
-    Event.CONST =
+    fEvent.CONST =
     {
         INTERNAL_PROPERTIES:
         {
@@ -49,13 +48,13 @@
 
         EventPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
-            if(window.Event.prototype[propertyName] == null) { return; }
+            if(Event.prototype[propertyName] == null) { return; }
             this.addProperty
             (
                 propertyName,
                 new Firecrow.N_Interpreter.fcValue
                 (
-                    window.Event.prototype[propertyName],
+                    Event.prototype[propertyName],
                     Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, propertyName, this),
                     null
                 ),
@@ -103,7 +102,7 @@
     {
         executeInternalMethod: function(thisObject, functionObject, args, callExpression)
         {
-            if(!functionObject.isInternalFunction) { Event.notifyError("The function should be internal when executing html method!"); return; }
+            if(!functionObject.isInternalFunction) { fEvent.notifyError("The function should be internal when executing html method!"); return; }
 
             var functionObjectValue = functionObject.jsValue;
             var thisObjectValue = thisObject.jsValue;

@@ -3,11 +3,11 @@
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var FIRECROW_AJAX_PROXY_URL = "http://localhost/Firecrow/proxy/proxy.php";
 
-    var XMLHttpRequest = Firecrow.N_Interpreter.XMLHttpRequest = function(xmlHttpRequestObject, globalObject, codeConstruct)
+    var fXMLHttpRequest = Firecrow.N_Interpreter.XMLHttpRequest = function(xmlHttpRequestObject, globalObject, codeConstruct)
     {
         this.initObject(globalObject, codeConstruct, xmlHttpRequestObject);
 
-        this.constructor = XMLHttpRequest;
+        this.constructor = fXMLHttpRequest;
         this.name = "XMLHttpRequest";
 
         this.openConstruct = null;
@@ -69,7 +69,7 @@
         };
     };
 
-    XMLHttpRequest.prototype = new Firecrow.N_Interpreter.Object();
+    fXMLHttpRequest.prototype = new Firecrow.N_Interpreter.Object();
 
     var XMLHttpRequestPrototype = Firecrow.N_Interpreter.XMLHttpRequestPrototype = function(globalObject)
     {
@@ -80,13 +80,13 @@
 
         XMLHttpRequestPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
-            var internalFunction = globalObject.internalExecutor.createInternalFunction(window.XMLHttpRequest.prototype[propertyName], propertyName, this, true);
+            var internalFunction = globalObject.internalExecutor.createInternalFunction(XMLHttpRequest.prototype[propertyName], propertyName, this, true);
             this[propertyName] = internalFunction;
             this.addProperty(propertyName, internalFunction, null, false);
         }, this);
     };
 
-    XMLHttpRequest.notifyError = function(message) { alert("XMLHttpRequest - " + message); }
+    fXMLHttpRequest.notifyError = function(message) { alert("XMLHttpRequest - " + message); }
 
     XMLHttpRequestPrototype.prototype = new Firecrow.N_Interpreter.Object();
 
@@ -262,7 +262,7 @@
             }
         },
 
-        notifyError: function(message) { debugger; XMLHttpRequest.notifyError(message);}
+        notifyError: function(message) { debugger; fXMLHttpRequest.notifyError(message);}
     };
     /*************************************************************************************/
 })();

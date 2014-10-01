@@ -1,23 +1,23 @@
 (function (){
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    var Object = Firecrow.N_Interpreter.Object = function() {};
+    var fObject = Firecrow.N_Interpreter.Object = function() {};
 
-    Object.createObjectWithInit = function(globalObject, codeConstruct, implementationObject, proto)
+    fObject.createObjectWithInit = function(globalObject, codeConstruct, implementationObject, proto)
     {
-        return (new Object()).initObject(globalObject, codeConstruct, implementationObject, proto);
+        return (new fObject()).initObject(globalObject, codeConstruct, implementationObject, proto);
     }
 
-    Object.LAST_ID = 0;
-    Object.MONOLITIC_ARRAYS = true;
+    fObject.LAST_ID = 0;
+    fObject.MONOLITIC_ARRAYS = true;
 
-    Object.notifyError = function(message) { debugger; alert("Object - " + message); }
+    fObject.notifyError = function(message) { debugger; alert("Object - " + message); }
 
-    Object.prototype =
+    fObject.prototype =
     {
         initObject: function(globalObject, codeConstruct, implementationObject, proto)
         {
-            this.id = Object.LAST_ID++;
+            this.id = fObject.LAST_ID++;
 
             this.globalObject = globalObject;
             this.implementationObject = implementationObject;
@@ -158,7 +158,7 @@
             var property = this.getProperty(propertyName, codeConstruct);
 
             return property != null ? property.value
-                : undefined;
+                                    : undefined;
         },
 
         getLastPropertyModifications: function(codeConstruct)
@@ -388,7 +388,7 @@
 
         addDependenciesToAllProperties: function(codeConstruct)
         {
-            if(codeConstruct == null || !fcInternals.Object.MONOLITIC_ARRAYS) { return; }
+            if(codeConstruct == null || !fObject.MONOLITIC_ARRAYS) { return; }
 
             if(this.dummyDependencyNode == null)
             {
@@ -474,8 +474,6 @@
         }
     };
 
-    var ValueTypeHelper = Firecrow.ValueTypeHelper;
-
     Firecrow.N_Interpreter.ObjectExecutor =
     {
         isInternalObjectMethod: function(potentialFunction)
@@ -516,7 +514,7 @@
             }
             else
             {
-                Object.notifyError("Unknown ObjectExecutor method");
+                fObject.notifyError("Unknown ObjectExecutor method");
             }
         },
 
@@ -564,14 +562,14 @@
 
         _executeCreate: function(callExpression, args, globalObject)
         {
-            if(args.length == 0) { Object.notifyError("Can not call Object.create with zero parameters"); return null; }
+            if(args.length == 0) { fObject.notifyError("Can not call Object.create with zero parameters"); return null; }
 
             var baseObject = {};
 
-            var newlyCreatedObject = new fcInternals.fcValue
+            var newlyCreatedObject = new Firecrow.N_Interpreter.fcValue
             (
                 baseObject,
-                fcInternals.Object.createObjectWithInit(globalObject, callExpression, baseObject, args[0]),
+                fObject.createObjectWithInit(globalObject, callExpression, baseObject, args[0]),
                 callExpression
             );
 
@@ -585,7 +583,7 @@
 
         _executeDefineProperties: function(callExpression, args, globalObject)
         {
-            if(args.length < 2) { Object.notifyError("Object.defineProperties can not have less than 2 arguments"); return null;}
+            if(args.length < 2) { fObject.notifyError("Object.defineProperties can not have less than 2 arguments"); return null;}
 
             this._definePropertiesOnObject(args[0], args[1], globalObject, callExpression);
         },
@@ -631,7 +629,7 @@
 
         _executeDefineProperty: function(callExpression, args, globalObject)
         {
-            if(args.length < 3) { Object.notifyError("Can not call Object.defineProperty with less than 3 parameters"); return; }
+            if(args.length < 3) { fObject.notifyError("Can not call Object.defineProperty with less than 3 parameters"); return; }
 
             var propertyName = args[1].jsValue;
 
@@ -644,8 +642,8 @@
             var set = this._getPropertyDescriptorValue(jsPropertyDescriptorMap, "set", null);
             var value = jsPropertyDescriptorMap.value;
 
-            if(get != null || set != null) { Object.notifyError("Still does not handle defining getters and setters"); return; }
-            if(value == null) { Object.notifyError("Value must be set when definining property"); return; }
+            if(get != null || set != null) { fObject.notifyError("Still does not handle defining getters and setters"); return; }
+            if(value == null) { fObject.notifyError("Value must be set when definining property"); return; }
 
             args[0].iValue.addModification(callExpression, propertyName);
 
@@ -654,7 +652,7 @@
             dependencyCreator.createDataDependency(args[2].codeConstruct, callExpression);
             dependencyCreator.createDependenciesForObjectPropertyDefinition(args[2].codeConstruct);
 
-            window.Object.defineProperty(args[0].jsValue, propertyName,
+            Object.defineProperty(args[0].jsValue, propertyName,
             {
                 configurable: configurable,
                 enumerable: enumerable,
@@ -667,7 +665,7 @@
 
         _executeGetOwnPropertyDescriptor: function(callExpression, args, globalObject)
         {
-            if(args.length < 1) { Object.notifyError("Can not call getOwnPropertyDescriptor with 0 arguments"); return null; }
+            if(args.length < 1) { fObject.notifyError("Can not call getOwnPropertyDescriptor with 0 arguments"); return null; }
 
             if(args.length == 1) { return globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, undefined); }
 
@@ -680,7 +678,7 @@
             var newlyCreatedObject = new Firecrow.N_Interpreter.fcValue
             (
                 baseObject,
-                Object.createObjectWithInit(globalObject, callExpression, baseObject),
+                fObject.createObjectWithInit(globalObject, callExpression, baseObject),
                 callExpression
             );
 
@@ -699,36 +697,36 @@
 
         _executeKeys: function(callExpression, args, globalObject)
         {
-            if(args.length == 0) { Object.notifyError("Can not call Object.keys with 0 arguments"); return null; }
+            if(args.length == 0) { fObject.notifyError("Can not call Object.keys with 0 arguments"); return null; }
 
-            if(args[0] == null || args[0].iValue == null) { Object.notifyError("Object keys argument hast to have iValue"); return null; }
+            if(args[0] == null || args[0].iValue == null) { fObject.notifyError("Object keys argument hast to have iValue"); return null; }
 
             return this._createArrayFromPropertyNames(args[0].iValue, args[0].iValue.getEnumeratedPropertyNames(), globalObject, callExpression);
         },
 
         _getOwnPropertyNames: function(callExpression, args, globalObject)
         {
-            if(args.length == 0) { Object.notifyError("Can not call Object.keys with 0 arguments"); return null; }
+            if(args.length == 0) { fObject.notifyError("Can not call Object.keys with 0 arguments"); return null; }
 
-            if(args[0] == null || args[0].iValue == null) { Object.notifyError("Object keys argument hast to have iValue"); return null; }
+            if(args[0] == null || args[0].iValue == null) { fObject.notifyError("Object keys argument hast to have iValue"); return null; }
 
             return this._createArrayFromPropertyNames(args[0].iValue, args[0].iValue.getOwnPropertyNames(), globalObject, callExpression);
         },
 
         _executeGetPrototypeOf: function(callExpression, args, globalObject)
         {
-            if(args.length == 0) { Object.notifyError("Can not call Object.getPrototypeOf with 0 arguments"); return null; }
+            if(args.length == 0) { fObject.notifyError("Can not call Object.getPrototypeOf with 0 arguments"); return null; }
 
-            if(args[0] == null || args[0].iValue == null) { Object.notifyError("Object getPrototypeOf argument hast to have iValue"); return null; }
+            if(args[0] == null || args[0].iValue == null) { fObject.notifyError("Object getPrototypeOf argument hast to have iValue"); return null; }
 
             return args[0].iValue.proto;
         },
 
         _preventExtensions: function(callExpression, args, globalObject)
         {
-            if(args.length == 0) { Object.notifyError("Can not call Object.preventExtensions with 0 arguments"); return null; }
+            if(args.length == 0) { fObject.notifyError("Can not call Object.preventExtensions with 0 arguments"); return null; }
 
-            if(args[0] == null || args[0].iValue == null) { Object.notifyError("Object preventExtensions argument hast to have iValue"); return null; }
+            if(args[0] == null || args[0].iValue == null) { fObject.notifyError("Object preventExtensions argument hast to have iValue"); return null; }
 
             Object.preventExtensions(args[0].jsValue);
             args[0].iValue.preventExtensions = true;
@@ -739,9 +737,9 @@
 
         _isExtensible: function(callExpression, args, globalObject)
         {
-            if(args.length == 0) { Object.notifyError("Can not call Object.isExtensible with 0 arguments"); return null; }
+            if(args.length == 0) { fObject.notifyError("Can not call Object.isExtensible with 0 arguments"); return null; }
 
-            if(args[0] == null || args[0].iValue == null) { Object.notifyError("Object isExtensible argument hast to have iValue"); return null; }
+            if(args[0] == null || args[0].iValue == null) { fObject.notifyError("Object isExtensible argument hast to have iValue"); return null; }
 
             var dependencyCreator = globalObject.dependencyCreator;
 
@@ -788,7 +786,7 @@
         _getPropertyDescriptorValue: function(propertyDescriptorMap, propertyName, defaultValue)
         {
             return propertyDescriptorMap[propertyName] != null ? propertyDescriptorMap[propertyName].jsValue
-                : defaultValue;
+                                                               : defaultValue;
         },
 
         executeInternalConstructor: function(constructorConstruct, args, globalObject)
@@ -875,7 +873,7 @@
         }, this);
     };
 
-    Firecrow.N_Interpreter.ObjectFunction.prototype = new Object();
+    Firecrow.N_Interpreter.ObjectFunction.prototype = new fObject();
 
     Firecrow.N_Interpreter.ObjectFunction.CONST =
     {
@@ -897,7 +895,7 @@
         this.name = "ObjectPrototype";
     };
 
-    Firecrow.N_Interpreter.ObjectPrototype.prototype = new Object();
+    Firecrow.N_Interpreter.ObjectPrototype.prototype = new fObject();
     Firecrow.N_Interpreter.ObjectPrototype.prototype.initMethods = function()
     {
         Firecrow.N_Interpreter.ObjectPrototype.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)

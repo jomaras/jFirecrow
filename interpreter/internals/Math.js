@@ -1,18 +1,18 @@
 (function()
 {
 /*************************************************************************************/
-    var Math = Firecrow.N_Interpreter.Math = function(globalObject)
+    var fMath = Firecrow.N_Interpreter.Math = function(globalObject)
     {
         this.initObject(globalObject);
 
-        Math.CONST.INTERNAL_PROPERTIES.PROPERTIES.forEach(function(property)
+        fMath.CONST.INTERNAL_PROPERTIES.PROPERTIES.forEach(function(property)
         {
             var propertyValue = this.globalObject.internalExecutor.createInternalPrimitiveObject(null, Math[property]);
             this.addProperty(property, propertyValue, null);
             this[property] = propertyValue;
         }, this);
 
-        Math.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
+        fMath.CONST.INTERNAL_PROPERTIES.METHODS.forEach(function(propertyName)
         {
             var propertyValue = new Firecrow.N_Interpreter.fcValue
             (
@@ -27,11 +27,11 @@
         }, this);
     };
 
-    Math.prototype = new Firecrow.N_Interpreter.Object();
+    fMath.prototype = new Firecrow.N_Interpreter.Object();
 
-    Math.notifyError = function(message){ alert("Math - " + message); };
+    fMath.notifyError = function(message){ alert("Math - " + message); };
 
-    Math.CONST =
+    fMath.CONST =
     {
         INTERNAL_PROPERTIES:
         {
@@ -44,13 +44,13 @@
         }
     };
 
-    Math.prototype = new Firecrow.N_Interpreter.Object();
+    fMath.prototype = new Firecrow.N_Interpreter.Object();
 
     Firecrow.N_Interpreter.MathExecutor =
     {
         executeInternalMethod: function(thisObject, functionObject, args, callExpression)
         {
-            if(!functionObject.isInternalFunction) { Math.notifyError("The function should be internal when executing Math method!"); return; }
+            if(!functionObject.isInternalFunction) { fMath.notifyError("The function should be internal when executing Math method!"); return; }
 
             return new Firecrow.N_Interpreter.fcValue
             (

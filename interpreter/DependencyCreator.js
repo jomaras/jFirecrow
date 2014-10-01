@@ -9,17 +9,12 @@
         this.executionContextStack = executionContextStack;
     };
 
-    DependencyCreator.shouldCreateDependencies = false;
-    DependencyCreator.shouldCreateSimpleDependencies = true;
-
     DependencyCreator.notifyError = function(message) { debugger; alert("DependencyCreator - " + message);};
 
     DependencyCreator.prototype =
     {
         createDependencyToConstructorPrototype: function(creationCodeConstruct, constructorFunction)
         {
-            if(!this.shouldCreateDependencies) { return; }
-
             if(constructorFunction.iValue != null && constructorFunction.iValue.prototypeDefinitionConstruct != null)
             {
                 this.globalObject.browser.callDataDependencyEstablishedCallbacks
@@ -49,8 +44,6 @@
 
         createExitFunctionDependencies: function(callFunctionCommand)
         {
-            if(!this.shouldCreateDependencies) { return; }
-
             this.addDependenciesToPreviouslyExecutedBlockConstructs(callFunctionCommand.codeConstruct, this.executionContextStack.getPreviouslyExecutedBlockConstructs());
 
             if(callFunctionCommand.executedReturnCommand != null && callFunctionCommand.executedReturnCommand.codeConstruct.argument == null)
@@ -66,7 +59,6 @@
 
         createDependenciesForObjectPropertyDefinition: function(propertyConstruct)
         {
-            if(!this.shouldCreateDependencies) { return; }
             if(!ASTHelper.isObjectExpression(propertyConstruct)) { return; }
 
             var children = propertyConstruct.children;
@@ -81,23 +73,17 @@
 
         createDataDependency: function(fromConstruct, toConstruct, evaluationPosition, toEvaluationPosition)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createSimpleDependency(fromConstruct, toConstruct); }
-            if(!this.shouldCreateDependencies) { return; }
-
             this.globalObject.browser.callDataDependencyEstablishedCallbacks
             (
                 fromConstruct,
                 toConstruct,
-                    evaluationPosition || this.globalObject.getPreciseEvaluationPositionId(),
+                evaluationPosition || this.globalObject.getPreciseEvaluationPositionId(),
                 toEvaluationPosition
             );
         },
 
         createValueDataDependency: function(fromConstruct, toConstruct, evaluationPosition, toEvaluationPosition)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createSimpleDependency(fromConstruct, toConstruct); }
-            if(!this.shouldCreateDependencies) { return; }
-
             this.globalObject.browser.callDataDependencyEstablishedCallbacks
             (
                 fromConstruct,
@@ -110,8 +96,6 @@
 
         markEnterFunctionPoints: function(enterFunctionCommand)
         {
-            if(!this.shouldCreateDependencies) { return; }
-
             if(enterFunctionCommand == null || enterFunctionCommand.parentFunctionCommand == null) { return; }
 
             //TODO - this should not be here!
@@ -132,8 +116,6 @@
 
         createFunctionParametersDependencies: function(callCommand, formalParams, args)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createFunctionParametersSimpleDependencies(callCommand, formalParams, args); }
-            if(!this.shouldCreateDependencies) { return; }
             if(callCommand == null) { return; }
 
             //this._createArgumentsToCallDependencies(callCommand, args);
@@ -142,7 +124,6 @@
 
         _createArgumentsToCallDependencies: function(callCommand, args)
         {
-            if(!this.shouldCreateDependencies) { return; }
             if(args == null) { return; }
 
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
@@ -153,27 +134,8 @@
             }
         },
 
-        _createFunctionParametersSimpleDependencies: function(callCommand, formalParams, args)
-        {
-            if(callCommand == null || args == null) { return; }
-
-            for(var i = 0; i < args.length; i++)
-            {
-                this._createSimpleDependency(args[i], callCommand.codeConstruct);
-            }
-
-            for(var i = 0, length = formalParams.length; i < length; i++)
-            {
-                var formalParam = formalParams[i].value.codeConstruct;
-
-                this._createSimpleDependency(formalParam, args[i]);
-                this._createSimpleDependency(formalParam, callCommand.codeConstruct);
-            }
-        },
-
         _createFormalParameterDependencies: function(callCommand, formalParams, args)
         {
-            if(!this.shouldCreateDependencies) { return; }
             if(args == null) { return; }
 
             if(callCommand.isApply) { this._createFormalParameterDependenciesInApply(callCommand, formalParams, args); }
@@ -184,7 +146,6 @@
 
         _createFormalParameterDependenciesInApply: function(callCommand, formalParams, args)
         {
-            if(!this.shouldCreateDependencies) { return; }
             var argumentValue = this.executionContextStack.getExpressionValue(args[1]);
 
             if(argumentValue == null) { return; }
@@ -208,7 +169,6 @@
 
         _createFormalParameterDependenciesInCall: function(callCommand, formalParams, args)
         {
-            if(!this.shouldCreateDependencies) { return; }
             var evalPosition = this.globalObject.getPreciseEvaluationPositionId();
 
             for(var i = 0, length = formalParams.length; i < length; i++)
@@ -222,7 +182,6 @@
 
         _createFormalParameterDependenciesInStandard: function(callCommand, formalParams, args)
         {
-            if(!this.shouldCreateDependencies) { return; }
             var evalPosition = this.globalObject.getPreciseEvaluationPositionId();
 
             for(var i = 0, length = formalParams.length; i < length; i++)
@@ -237,7 +196,6 @@
 
         addDependenciesToPreviouslyExecutedBlockConstructs: function(codeConstruct, previouslyExecutedBlockConstructs)
         {
-            if(!this.shouldCreateDependencies) { return; }
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
             evaluationPosition.isReturnDependency = true;
 
@@ -258,7 +216,6 @@
 
         addDependenciesToTopBlockConstructs: function(currentConstruct)
         {
-            if(!this.shouldCreateDependencies) { return; }
             var topBlockConstructs = this.executionContextStack.getTopBlockCommandConstructs();
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
 
@@ -316,7 +273,6 @@
 
         _createFormalParameterDependenciesInCallback: function(callCommand, formalParameters, args)
         {
-            if(!this.shouldCreateDependencies) { return; }
             var params = callCommand.callbackFunction.codeConstruct.params;
             var evalPosition = this.globalObject.getPreciseEvaluationPositionId();
 
@@ -348,12 +304,9 @@
         },
 
         createCallbackFunctionCommandDependencies: function(evalCallbackFunctionCommand){},
-        _createSimpleCallbackFunctionCommandDependencies: function(evalCallbackFunctionCommand) {},
 
         createAssignmentDependencies: function(assignmentCommand)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createAssignmentSimpleDependencies(assignmentCommand); }
-            if(!this.shouldCreateDependencies) { return; }
             var assignmentExpression = assignmentCommand.codeConstruct;
 
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
@@ -374,23 +327,12 @@
 
         createUpdateExpressionDependencies: function(updateExpression)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createUpdateSimpleDependencies(updateExpression); }
-            if(!this.shouldCreateDependencies) { return; }
-
             this.globalObject.browser.callDataDependencyEstablishedCallbacks(updateExpression, updateExpression.argument, this.globalObject.getPreciseEvaluationPositionId());
             this.addDependenciesToTopBlockConstructs(updateExpression);
         },
 
-        _createUpdateSimpleDependencies: function(updateExpression)
-        {
-            this._createSimpleDependency(updateExpression, updateExpression.argument);
-        },
-
         createIdentifierDependencies:function(identifier, identifierConstruct, evaluationPosition)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createIdentifierSimpleDependencies(identifier, identifierConstruct); }
-            if(!this.shouldCreateDependencies) { return; }
-
             this._addDependencyToIdentifierDeclaration(identifier, identifierConstruct, evaluationPosition);
 
             if(this._willIdentifierBeReadInAssignmentExpression(identifierConstruct))
@@ -404,16 +346,6 @@
             }
         },
 
-        _createIdentifierSimpleDependencies: function(identifier, identifierConstruct)
-        {
-            if(this._willIdentifierBeReadInAssignmentExpression(identifierConstruct))
-            {
-                this._addSimpleDependencyToLastModificationPoint(identifier, identifierConstruct);
-            }
-
-            this._addSimpleDependencyToIdentifierDeclaration(identifier, identifierConstruct);
-        },
-
         _willIdentifierBeReadInAssignmentExpression: function(identifierConstruct)
         {
             return !ASTHelper.isAssignmentExpression(identifierConstruct.parent) || identifierConstruct.parent.left != identifierConstruct || identifierConstruct.parent.operator.length == 2;
@@ -421,8 +353,6 @@
 
         _addDependencyToLastModificationPoint: function(identifier, identifierConstruct, evaluationPosition)
         {
-            if(!this.shouldCreateDependencies) { return; }
-
             if(identifier.lastModificationPosition == null) { return; }
 
             this.globalObject.browser.callDataDependencyEstablishedCallbacks
@@ -446,55 +376,23 @@
             );
         },
 
-        _addSimpleDependencyToLastModificationPoint: function(identifier, identifierConstruct)
-        {
-            if(identifier.lastModificationPosition != null)
-            {
-                this._createSimpleDependency(identifierConstruct, identifier.lastModificationPosition.codeConstruct);
-            }
-
-            if(identifier.value != null)
-            {
-                this._createSimpleDependency(identifierConstruct, identifier.value.codeConstruct);
-            }
-        },
-
         _addDependencyToIdentifierDeclaration: function(identifier, identifierConstruct, evaluationPosition)
         {
-            if(!this.shouldCreateDependencies) { return; }
-
             if(identifier.declarationPosition == null || identifier.declarationPosition == identifier.lastModificationPosition) { return; }
 
             this.globalObject.browser.callDataDependencyEstablishedCallbacks
             (
                 identifierConstruct,
                 ASTHelper.isVariableDeclarator(identifier.declarationPosition.codeConstruct) ? identifier.declarationPosition.codeConstruct.id
-                    : identifier.declarationPosition.codeConstruct,
+                                                                                             : identifier.declarationPosition.codeConstruct,
                 evaluationPosition,
                 null, null,
                 true
             );
         },
 
-        _addSimpleDependencyToIdentifierDeclaration: function(identifier, identifierConstruct)
-        {
-            if(!this.shouldCreateDependencies) { return; }
-
-            if(identifier.declarationPosition == null || identifier.declarationPosition == identifier.lastModificationPosition) { return; }
-
-            this._createSimpleDependency
-            (
-                identifierConstruct,
-                ASTHelper.isVariableDeclarator(identifier.declarationPosition.codeConstruct) ? identifier.declarationPosition.codeConstruct.id
-                                                                                             : identifier.declarationPosition.codeConstruct
-            );
-        },
-
         createBinaryExpressionDependencies: function(binaryExpression)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createBinarySimpleDependencies(binaryExpression); }
-            if(!this.shouldCreateDependencies) { return; }
-
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
 
             this.globalObject.browser.callDataDependencyEstablishedCallbacks(binaryExpression, binaryExpression.left, evaluationPosition);
@@ -552,16 +450,8 @@
             }
         },
 
-        _createBinarySimpleDependencies: function(binaryExpression)
-        {
-            this._createSimpleDependency(binaryExpression, binaryExpression.left);
-            this._createSimpleDependency(binaryExpression, binaryExpression.right);
-        },
-
         createReturnDependencies: function(returnCommand)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createReturnSimpleDependencies(returnCommand); }
-            if(!this.shouldCreateDependencies) { return; }
             this.globalObject.browser.callControlDependencyEstablishedCallbacks(returnCommand.codeConstruct, returnCommand.codeConstruct.argument, this.globalObject.getPreciseEvaluationPositionId());
 
             this.addDependenciesToTopBlockConstructs(returnCommand.codeConstruct);
@@ -571,20 +461,8 @@
             this.globalObject.browser.callDataDependencyEstablishedCallbacks(returnCommand.parentFunctionCommand.codeConstruct, returnCommand.codeConstruct, this.globalObject.getReturnExpressionPreciseEvaluationPositionId());
         },
 
-        _createReturnSimpleDependencies: function(returnCommand)
-        {
-            this._createSimpleDependency(returnCommand.codeConstruct, returnCommand.codeConstruct.argument);
-
-            if(returnCommand.parentFunctionCommand == null || returnCommand.parentFunctionCommand.isExecuteCallbackCommand()) { return; }
-
-            this._createSimpleDependency(returnCommand.parentFunctionCommand.codeConstruct, returnCommand.codeConstruct);
-        },
-
         createMemberExpressionDependencies: function(object, property, propertyValue, memberExpression)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createMemberSimpleDependencies(object, property, propertyValue, memberExpression); }
-            if(!this.shouldCreateDependencies) { return; }
-            //TODO - possibly can create a problem? - for problems see slicing 54, 55, 56
             var propertyExists = propertyValue !== undefined && propertyValue.jsValue !== undefined;
 
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
@@ -651,42 +529,8 @@
             }
         },
 
-        _createMemberSimpleDependencies: function(object, property, propertyValue, memberExpression)
-        {
-            if(object.iValue != null)
-            {
-                var fcProperty = object.iValue.getProperty(property.jsValue, memberExpression);
-
-                if(fcProperty != null && !ASTHelper.isLastPropertyInLeftHandAssignment(memberExpression.property))
-                {
-                    if(fcProperty.lastModificationPosition != null)
-                    {
-                        this._createSimpleDependency(memberExpression.property, fcProperty.lastModificationPosition.codeConstruct);
-                    }
-                    else  if(fcProperty.declarationPosition != null)
-                    {
-                        this._createSimpleDependency(memberExpression.property, fcProperty.declarationPosition.codeConstruct);
-                    }
-                }
-            }
-
-            this._createSimpleDependency(memberExpression, memberExpression.object);
-            this._createSimpleDependency(memberExpression, memberExpression.property);
-
-            if(memberExpression.computed && ASTHelper.isIdentifier(memberExpression.property))
-            {
-                var identifier = this.executionContextStack.getIdentifier(memberExpression.property.name);
-                if(identifier != null && identifier.declarationPosition != null)
-                {
-                    this._createSimpleDependency(memberExpression, identifier.declarationPosition.codeConstruct);
-                }
-            }
-        },
-
         createDependenciesInForInWhereCommand: function(forInWhereConstruct, whereObject, nextPropertyName, isFirstIteration)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createForInWhereSimpleDependencies(forInWhereConstruct, whereObject, nextPropertyName); }
-            if(!this.shouldCreateDependencies) { return; }
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
             this.addDependenciesToTopBlockConstructs(forInWhereConstruct.left);
             this.globalObject.browser.callDataDependencyEstablishedCallbacks(forInWhereConstruct, forInWhereConstruct.right, evaluationPosition);
@@ -735,50 +579,16 @@
             }
         },
 
-        _createForInWhereSimpleDependencies: function(forInWhereConstruct, whereObject, nextPropertyName)
-        {
-            this._createSimpleDependency(forInWhereConstruct, forInWhereConstruct.right);
-            this._createSimpleDependency(forInWhereConstruct.left, forInWhereConstruct.right);
-
-            if(!nextPropertyName || !nextPropertyName.jsValue) { return; }
-
-            var property = whereObject.iValue.getProperty(nextPropertyName.jsValue);
-
-            if(property != null && property.lastModificationPosition != null)
-            {
-                this._createSimpleDependency(forInWhereConstruct.left, property.lastModificationPosition.codeConstruct);
-
-                if (ASTHelper.isVariableDeclaration(forInWhereConstruct.left))
-                {
-                    var declarator = forInWhereConstruct.left.declarations[0];
-
-                    this._createSimpleDependency(declarator.id, property.lastModificationPosition.codeConstruct);
-                    this._createSimpleDependency(declarator, forInWhereConstruct.right);
-                    this._createSimpleDependency(declarator.id, forInWhereConstruct.right);
-                }
-            }
-        },
-
         createDependenciesForConditionalCommand: function(conditionalCommand)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createConditionalSimpleDependencies(conditionalCommand); }
-            if(!this.shouldCreateDependencies) { return; }
-
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
 
             this.globalObject.browser.callDataDependencyEstablishedCallbacks(conditionalCommand.codeConstruct, conditionalCommand.codeConstruct.test, evaluationPosition);
             this.globalObject.browser.callDataDependencyEstablishedCallbacks(conditionalCommand.codeConstruct, conditionalCommand.startCommand.body, evaluationPosition);
         },
 
-        _createConditionalSimpleDependencies: function(conditionalCommand)
-        {
-            this._createSimpleDependency(conditionalCommand.codeConstruct, conditionalCommand.codeConstruct.test);
-            this._createSimpleDependency(conditionalCommand.codeConstruct, conditionalCommand.startCommand.body);
-        },
-
         createDependenciesForLogicalExpressionItemCommand: function(logicalExpression)
         {
-            if(!this.shouldCreateDependencies) { return; }
             //TODO: not sure about this -> should it be for both
             //if(logicalExpression.operator == "&&")
             {
@@ -794,8 +604,6 @@
 
         createDependenciesForLogicalExpression: function(logicalExpressionCommand)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createLogicalSimpleDependencies(logicalExpressionCommand); }
-            if(!this.shouldCreateDependencies) { return; }
             var executedItemsCommands = logicalExpressionCommand.executedLogicalItemExpressionCommands;
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
 
@@ -813,21 +621,8 @@
             }
         },
 
-        _createLogicalSimpleDependencies: function(logicalExpressionCommand)
-        {
-            var executedItemsCommands = logicalExpressionCommand.executedLogicalItemExpressionCommands;
-
-            for(var i = 0, length = executedItemsCommands.length; i < length; i++)
-            {
-                var executedLogicalExpressionItemConstruct = executedItemsCommands[i].codeConstruct;
-                this._createSimpleDependency(logicalExpressionCommand.codeConstruct, executedLogicalExpressionItemConstruct);
-            }
-        },
-
         createDependenciesForCallInternalFunction: function(callInternalFunctionCommand)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createSimpleDependenciesForCallInternalFunction(callInternalFunctionCommand); }
-            if(!this.shouldCreateDependencies) { return; }
             var callExpression = callInternalFunctionCommand.codeConstruct;
 
             //Callback function called with an internal function
@@ -853,37 +648,8 @@
             }
         },
 
-        _createSimpleDependenciesForCallInternalFunction: function(callInternalFunctionCommand)
-        {
-            var callExpression = callInternalFunctionCommand.codeConstruct;
-
-            //Callback function called with an internal function
-            if(callExpression == null) { return; }
-
-            var args = callExpression.arguments;
-
-            this._createSimpleDependency(callExpression, callExpression.callee);
-
-            if(callInternalFunctionCommand.isCall || callInternalFunctionCommand.isApply)
-            {
-                this._createSimpleDependenciesToCallApplyInternalFunctionCall(callInternalFunctionCommand, args, callExpression);
-            }
-            else
-            {
-                if(args == null) { return; }
-
-                for(var i = 0, length = args.length; i < length; i++)
-                {
-                    var argument = args[i];
-                    this._createSimpleDependency(callExpression, argument);
-                    this._createSimpleDependency(argument, callExpression);
-                }
-            }
-        },
-
         _createDependenciesToCallApplyInternalFunctionCall: function(callInternalFunctionCommand, args, callExpression)
         {
-            if(!this.shouldCreateDependencies) { return; }
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
 
             if(callInternalFunctionCommand.isCall)
@@ -904,55 +670,14 @@
             }
         },
 
-        _createSimpleDependenciesToCallApplyInternalFunctionCall: function(callInternalFunctionCommand, args, callExpression)
-        {
-            if(callInternalFunctionCommand.isCall)
-            {
-                for(var i = 1, length = arguments.length; i < length; i++)
-                {
-                    this._createSimpleDependency(callExpression, args[i]);
-                }
-            }
-            else
-            {
-                var secondArgumentValue = this.executionContextStack.getExpressionValue(args[1]);
-
-                if(secondArgumentValue != null && ValueTypeHelper.isArray(secondArgumentValue.jsValue))
-                {
-                    for(var i = 0; i < secondArgumentValue.jsValue.length; i++)
-                    {
-                        if(secondArgumentValue.jsValue[i] != null)
-                        {
-                            this._createSimpleDependency(callExpression, secondArgumentValue.jsValue[i].codeConstruct);
-                        }
-                    }
-                }
-            }
-        },
-
         createSequenceExpressionDependencies: function(sequenceExpression, lastExpression)
         {
-            if(this.shouldCreateSimpleDependencies) { this._createSimpleSequenceExpressionDependencies(sequenceExpression, lastExpression); }
-            if(!this.shouldCreateDependencies) { return; }
-
             this.globalObject.browser.callDataDependencyEstablishedCallbacks
             (
                 sequenceExpression,
                 lastExpression,
                 this.globalObject.getPreciseEvaluationPositionId()
             );
-        },
-
-        _createSimpleSequenceExpressionDependencies: function(sequenceExpression, lastExpression)
-        {
-            this._createSimpleDependency(sequenceExpression, lastExpression);
-        },
-
-        _createSimpleDependency: function(fromConstruct, toConstruct)
-        {
-            if(fromConstruct == null || toConstruct == null) { return; }
-
-            this.globalObject.simpleDependencyEstablished(fromConstruct, toConstruct);
         }
     };
     /*************************************************************************************/

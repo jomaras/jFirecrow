@@ -13,7 +13,7 @@
                 element.evalConstruct = evalConstruct;
             });
 
-            this.setParentsChildRelationships(programAST);
+            (new Firecrow.RelationshipSetter).traverseProgram(programAST);
         },
 
         calculateCoverage: function(pageModel, scriptPathsToIgnore)
@@ -66,8 +66,8 @@
                     if(ASTHelper.isBranchExpression(astElement))
                     {
                         if((ASTHelper.isIfStatement(astElement) && ASTHelper.isIfStatementBodyExecuted(astElement))
-                            || (ASTHelper.isSwitchCase(astElement) && ASTHelper.isSwitchCaseExecuted(astElement))
-                            || (ASTHelper.isLoopStatement(astElement) && ASTHelper.isLoopStatementExecuted(astElement)))
+                        || (ASTHelper.isSwitchCase(astElement) && ASTHelper.isSwitchCaseExecuted(astElement))
+                        || (ASTHelper.isLoopStatement(astElement) && ASTHelper.isLoopStatementExecuted(astElement)))
                         //|| (ASTHelper.isPureElseStatement(astElement) && ASTHelper._isElseStatementExecuted(astElement)))
                         {
                             executedNumberOfBranches++;
@@ -341,56 +341,35 @@
 
             var lineNumberAdjust = rootElement.lineAdjuster || 0;
             var source = rootElement.source || "";
+            var currentControlParent = null;
 
             this.traverseAst(rootElement, function(currentElement, propertyName, parentElement)
             {
-                if(currentElement != null)
-                {
-                    currentElement.parent = parentElement;
-                }
+                if(currentElement == null) { return; }
+
+                currentElement.parent = parentElement;
 
                 if(ASTHelper.isProgram(currentElement))
                 {
                     lineNumberAdjust = currentElement.lineAdjuster || 0;
                     source = rootElement.source || "";
+                    ASTHelper.traverseProgram(currentElement);
                 }
 
                 if(currentElement.loc != null)
                 {
                     currentElement.loc.start.line += lineNumberAdjust;
-                    currentElement.loc.end.line += lineNumberAdjust
+                    currentElement.loc.end.line += lineNumberAdjust;
                     currentElement.loc.source = source;
                 }
+
+                currentElement.controlParent = currentControlParent;
 
                 if(parentElement != null)
                 {
                     if(parentElement.children == null) { parentElement.children = []; }
 
-                    if(currentElement != null)
-                    {
-                        currentElement.indexInParent = parentElement.children.length;
-
-                        if(ASTHelper.getFunctionParent(currentElement) != null)
-                        {
-                            for(var i = parentElement.children.length - 1; i >= 0; i--)
-                            {
-                                var child = parentElement.children[i];
-
-                                if((ASTHelper.isLoopStatement(child) || ASTHelper.isIfStatement(child)))
-                                {
-                                    currentElement.previousCondition = child.test;
-                                    break;
-                                }
-                            }
-
-                            if(ASTHelper.isStatement(parentElement) && currentElement.previousCondition == null)
-                            {
-                                currentElement.previousCondition = parentElement.previousCondition;
-                            }
-                        }
-
-                        parentElement.children.push(currentElement);
-                    }
+                    parentElement.children.push(currentElement);
                 }
             });
 
@@ -750,30 +729,17 @@
             for(var propName in astElement)
             {
                 if(!astElement.hasOwnProperty(propName)) { continue; }
+
                 //Do not traverse the source code location properties and parents and graphNodes!
-                if(propName == "loc"
-                    || propName == "parent"
-                    || propName == "graphNode"
-                    || propName == "children"
-                    || propName == "domElement"
-                    || propName == "graphNode"
-                    || propName == "htmlNode"
-                    || propName == "attributes"
-                    || propName == "previousCondition"
-                    || propName == "includesNodes"
-                    || propName == "includedByNodes"
-                    || propName == "type"
-                    || propName == "eventTraces"
-                    || propName == "inclusionDependencyConstraint"
-                    || propName == "blockStackConstructs"
-                    || propName == "executorEventsMap"
-                    || propName == "simpleDependencies"
-                    || propName == "match"
-                    || propName == "globalObject"
-                    || propName == "dependencies"
-                    || propName == "reverseDependencies"
-                    || propName == "evalConstruct"
-                    || (ignoreProperties && ignoreProperties.indexOf(propName) != -1)) { continue; }
+                if(propName == "loc" || propName == "parent" || propName == "graphNode"
+                || propName == "children" || propName == "domElement" || propName == "graphNode"
+                || propName == "htmlNode" || propName == "attributes" || propName == "previousCondition"
+                || propName == "includesNodes" || propName == "includedByNodes" || propName == "type"
+                || propName == "eventTraces" || propName == "inclusionDependencyConstraint" || propName == "blockStackConstructs"
+                || propName == "executorEventsMap" || propName == "simpleDependencies" || propName == "match"
+                || propName == "globalObject" || propName == "dependencies" || propName == "reverseDependencies"
+                || propName == "evalConstruct" || propName == "controlParent"
+                || (ignoreProperties && ignoreProperties.indexOf(propName) != -1)) { continue; }
 
                 var propertyValue = astElement[propName];
 
@@ -807,23 +773,14 @@
             for(var propName in astElement)
             {
                 //Do not traverse the source code location properties and parents and graphNodes!
-                if(propName == "loc"
-                    || propName == "parent"
-                    || propName == "graphNode"
-                    || propName == "children"
-                    || propName == "domElement"
-                    || propName == "graphNode"
-                    || propName == "htmlNode"
-                    || propName == "attributes"
-                    || propName == "previousCondition"
-                    || propName == "includesNodes"
-                    || propName == "includedByNodes"
-                    || propName == "type"
-                    || propName == "eventTraces"
-                    || propName == "inclusionDependencyConstraint"
-                    || propName == "blockStackConstructs"
-                    || propName == "simpleDependencies"
-                    || propName == "executorEventsMap") { continue; }
+                if(propName == "loc" || propName == "parent" || propName == "graphNode"
+                || propName == "children" || propName == "domElement" || propName == "graphNode"
+                || propName == "htmlNode" || propName == "attributes" || propName == "previousCondition"
+                || propName == "includesNodes" || propName == "includedByNodes" || propName == "type"
+                || propName == "eventTraces" || propName == "inclusionDependencyConstraint" || propName == "blockStackConstructs"
+                || propName == "executorEventsMap" || propName == "simpleDependencies" || propName == "match"
+                || propName == "globalObject" || propName == "dependencies" || propName == "reverseDependencies"
+                || propName == "evalConstruct" || propName == "controlParent") { continue; }
 
                 var propertyValue = astElement[propName];
 
@@ -1521,8 +1478,7 @@
 
         isExpression: function(element)
         {
-            return element != null ? this.CONST.EXPRESSION[element.type] != null
-                : false;
+            return element != null ? this.CONST.EXPRESSION[element.type] != null : false;
         },
 
         isJsElement: function(element)

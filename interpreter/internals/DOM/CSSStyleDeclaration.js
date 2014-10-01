@@ -1,9 +1,8 @@
 (function()
 {
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
-    var CSSStyleDeclaration;
 
-    Firecrow.N_Interpreter.CSSStyleDeclaration = CSSStyleDeclaration = function(htmlElement, cssStyleDeclaration, globalObject, codeConstruct)
+    var fCSSStyleDeclaration = Firecrow.N_Interpreter.CSSStyleDeclaration = function(htmlElement, cssStyleDeclaration, globalObject, codeConstruct)
     {
 
         this.initObject(globalObject, codeConstruct);
@@ -11,11 +10,11 @@
         this.htmlElement = htmlElement;
         this.cssStyleDeclaration = cssStyleDeclaration || this.htmlElement.style;
 
-        this.constructor = CSSStyleDeclaration;
+        this.constructor = fCSSStyleDeclaration;
 
-        var methodObject = this.cssStyleDeclaration || CSSStyleDeclaration.prototype;
+        var methodObject = this.cssStyleDeclaration || fCSSStyleDeclaration.prototype;
 
-        var methods = CSSStyleDeclaration.CONST.INTERNAL_PROPERTIES.METHODS;
+        var methods = fCSSStyleDeclaration.CONST.INTERNAL_PROPERTIES.METHODS;
 
         for(var i = 0, length = methods.length; i < length; i++)
         {
@@ -60,21 +59,21 @@
         };
     };
 
-    CSSStyleDeclaration.prototype = new Firecrow.N_Interpreter.Object();
+    fCSSStyleDeclaration.prototype = new Firecrow.N_Interpreter.Object();
 
-    CSSStyleDeclaration.createStyleDeclaration = function(htmlElement, cssStyleDeclaration, globalObject, codeConstruct)
+    fCSSStyleDeclaration.createStyleDeclaration = function(htmlElement, cssStyleDeclaration, globalObject, codeConstruct)
     {
         return new Firecrow.N_Interpreter.fcValue
         (
             cssStyleDeclaration,
-            new CSSStyleDeclaration(htmlElement, cssStyleDeclaration, globalObject, codeConstruct),
+            new fCSSStyleDeclaration(htmlElement, cssStyleDeclaration, globalObject, codeConstruct),
             codeConstruct
         );
     };
 
-    CSSStyleDeclaration.notifyError =  function (message){debugger; alert("CSSStyleDeclaration - " + message); }
+    fCSSStyleDeclaration.notifyError =  function (message){debugger; alert("CSSStyleDeclaration - " + message); }
 
-    CSSStyleDeclaration.CONST =
+    fCSSStyleDeclaration.CONST =
     {
         INTERNAL_PROPERTIES :
         {
@@ -112,7 +111,7 @@
     {
         executeInternalMethod: function(thisObject, functionObject, args, callExpression)
         {
-            if(!functionObject.isInternalFunction) { CSSStyleDeclaration.notifyError("The function should be internal when css declaration method!"); return; }
+            if(!functionObject.isInternalFunction) { fCSSStyleDeclaration.notifyError("The function should be internal when css declaration method!"); return; }
 
             var functionObjectValue = functionObject.jsValue;
             var thisObjectValue = thisObject.jsValue;
@@ -131,7 +130,7 @@
                 case "removeProperty":
                 case "setProperty":
                 default:
-                    CSSStyleDeclaration.notifyError("Unhandled internal method in cssStyleDeclaration:" + functionName);
+                    fCSSStyleDeclaration.notifyError("Unhandled internal method in cssStyleDeclaration:" + functionName);
                     return;
             }
         }

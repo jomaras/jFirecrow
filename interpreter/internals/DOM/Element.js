@@ -1,7 +1,6 @@
 (function()
 {
-    var Element;
-    Firecrow.N_Interpreter.Element = Element = function(globalObject)
+    var fElement = Firecrow.N_Interpreter.Element = function(globalObject)
     {
         this.initObject(globalObject);
 
@@ -10,11 +9,10 @@
         this.name = "Element";
     };
 
-    Element.prototype = new Firecrow.N_Interpreter.Object();
-    Element.notifyError = function(message) { alert("Element - " + message);};
+    fElement.prototype = new Firecrow.N_Interpreter.Object();
+    fElement.notifyError = function(message) { alert("Element - " + message);};
 
-    var ElementPrototype;
-    Firecrow.N_Interpreter.ElementPrototype = ElementPrototype = function(globalObject)
+    var ElementPrototype = Firecrow.N_Interpreter.ElementPrototype = function(globalObject)
     {
         this.initObject(globalObject);
         this.constructor = ElementPrototype;

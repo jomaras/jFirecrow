@@ -1,9 +1,9 @@
 (function() {
 /*************************************************************************************/
-    var Error = Firecrow.N_Interpreter.Error = function(implementationObject, globalObject, codeConstruct)
+    var fError = Firecrow.N_Interpreter.Error = function(implementationObject, globalObject, codeConstruct)
     {
         this.initObject(globalObject, codeConstruct, implementationObject, globalObject.fcErrorPrototype);
-        this.constructor = Error;
+        this.constructor = fError;
 
         this.addProperty("message", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, implementationObject.message), codeConstruct, false);
         this.addProperty("name", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, implementationObject.name), codeConstruct, false);
@@ -14,8 +14,8 @@
         this.addProperty("stack", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, implementationObject.stack), codeConstruct, false);
     };
 
-    Firecrow.N_Interpreter.Error.notifyError = function(message) { alert("Error - " + message); };
-    Firecrow.N_Interpreter.Error.prototype = new Firecrow.N_Interpreter.Object();
+    fError.notifyError = function(message) { alert("Error - " + message); };
+    fError.prototype = new Firecrow.N_Interpreter.Object();
 
     var ErrorPrototype = Firecrow.N_Interpreter.ErrorPrototype = function(globalObject)
     {

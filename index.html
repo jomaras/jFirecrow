@@ -6,6 +6,7 @@
     <script src="Firecrow.js"></script>
 
     <script src="ast/ASTHelper.js"></script>
+    <script src="ast/RelationshipSetter.js"></script>
     <script src="ast/esprima.js"></script>
 
     <script src="helpers/ValueTypeHelper.js"></script>
@@ -44,6 +45,7 @@
     <script src="interpreter/internals/DOM/HTMLElement.js"></script>
     <script src="interpreter/internals/DOM/HTMLImageElement.js"></script>
     <script src="interpreter/internals/DOM/Image.js"></script>
+    <script src="interpreter/internals/DOM/Document.js"></script>
 
     <script src="interpreter/DependencyCreator.js"></script>
     <script src="interpreter/VariableObject.js"></script>
@@ -58,13 +60,11 @@
 <body>
     <iframe id="firecrowFrame" height="800" width="1300"></iframe>
     <script>
-        Firecrow.ASTHelper.setParentsChildRelationships(model);
+        (new Firecrow.RelationshipSetter).traverseHtmlElement(model.htmlElement);
 
         var browser = new Firecrow.Browser(model);
 
         browser.url = model.pageUrl;
-
-        Firecrow.N_Interpreter.DependencyCreator.shouldCreateDependencies = true;
 
         browser.registerSlicingCriteria(Firecrow.N_DependencyGraph.SlicingCriterion.createReadIdentifierCriterion("", "", "a"));
         browser.evaluatePage();

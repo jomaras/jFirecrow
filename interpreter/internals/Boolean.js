@@ -1,23 +1,23 @@
 (function(){
 
-    var Boolean = Firecrow.N_Interpreter.Boolean = function(value, globalObject, codeConstruct, isLiteral)
+    var fBoolean = Firecrow.N_Interpreter.Boolean = function(value, globalObject, codeConstruct, isLiteral)
     {
         this.initObject(globalObject, codeConstruct);
 
         this.value = value;
         this.isLiteral = !!isLiteral;
 
-        this.constructor = Boolean;
+        this.constructor = fBoolean;
 
         this.addProperty("__proto__", this.globalObject.fcBooleanPrototype);
     };
 
-    Boolean.prototype = new Firecrow.N_Interpreter.Object();
-    Boolean.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
+    fBoolean.prototype = new Firecrow.N_Interpreter.Object();
+    fBoolean.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
     {
         return this.getPropertyValue(propertyName, codeConstruct);
     };
-    Boolean.prototype.isPrimitive = function()
+    fBoolean.prototype.isPrimitive = function()
     {
         return this.isLiteral;
     };
@@ -34,7 +34,6 @@
     };
 
     BooleanFunction.prototype = new Firecrow.N_Interpreter.Object();
-
 
     var BooleanPrototype = Firecrow.N_Interpreter.BooleanPrototype = function(globalObject)
     {

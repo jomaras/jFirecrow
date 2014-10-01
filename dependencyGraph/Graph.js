@@ -22,12 +22,7 @@
 
         this.dependencyCallExpressionMapping = {};
 
-        this.currentCallExpressions = [];
-        this.currentCallExpressionsHardCopy = [];
-
         this.executionContextIndexMap = {};
-        this.executionContextIdStack = [];
-        this.pushExecutionContextId("root");
         this.traversedEdgesMap = {};
         this.expressionTrace = [];
     };
@@ -52,7 +47,7 @@
 
         handleNodeCreated: function(nodeModelObject, type, isDynamic)
         {
-            this.addNode(new Node(nodeModelObject, type, isDynamic));
+            this.addNode(new fcGraph.Node(nodeModelObject, type, isDynamic));
         },
 
         handleNodeInserted: function(nodeModelObject, parentNodeModelObject, isDynamic)
@@ -92,10 +87,7 @@
                 edge.isValueDependency = isValueDependency;
                 sourceNodeModelObject.maxCreatedDependencyIndex = edge.index;
 
-                if(DependencyGraph.sliceUnions) {  this._registerDependencyCallExpressionRelationship(edge); }
-
-                this.executionContextIndexMap[this.executionContextId].push(edge.index);
-                edge.executionContextId = this.executionContextId;
+                this._registerDependencyCallExpressionRelationship(edge);
             }
         },
 
@@ -207,23 +199,6 @@
             //debugger;
         },
 
-        handleEnterFunction: function(callExpression, functionConstruct, executionContextId)
-        {
-            if(callExpression == null) return;
-
-            this.currentCallExpressions.push(callExpression);
-            this.currentCallExpressionsHardCopy = this.currentCallExpressions.slice();
-
-            this.pushExecutionContextId(executionContextId);
-        },
-
-        handleExitFunction: function()
-        {
-            this.currentCallExpressions.pop();
-            this.currentCallExpressionsHardCopy = this.currentCallExpressions.slice();
-            this.popExecutionContextId();
-        },
-
         markGraph: function(model)
         {
             this.previouslyExecutedBlockDependencies = [];
@@ -249,7 +224,7 @@
             addedDependencies += this._traverseExecutedBlockDependencies();
             addedDependencies += this._traverseBreakContinueReturnEventsDependencies();
 
-            if(fcGraph.DependencyGraph.sliceUnions)
+            if(fcGraph.Graph.sliceUnions)
             {
                 addedDependencies += this._traverseSliceUnionPossibleProblems(this.expressionTrace);
             }
@@ -263,7 +238,6 @@
             {
                 var mapping = executionTrace[i];
 
-                DependencyGraph.noOfSlicingCriteria++;
                 this._mainTraverseAndMark(mapping.codeConstruct, mapping.dependencyIndex, null, null);
             }
         },
@@ -276,7 +250,6 @@
 
                 if(!htmlModelNode.shouldBeIncluded) { continue; }
 
-                DependencyGraph.noOfSlicingCriteria++;
                 this._mainTraverseAndMark(htmlModelNode);
                 this._markParentCssDependencies(htmlModelNode.domElement);
             }
@@ -285,7 +258,7 @@
         _markParentCssDependencies: function(htmlDomNode)
         {
             if(htmlDomNode == null || htmlDomNode.parentNode == null
-                || htmlDomNode.parentNode.modelElement == null || htmlDomNode.parentNode.modelElement.graphNode == null) { return; }
+            || htmlDomNode.parentNode.modelElement == null || htmlDomNode.parentNode.modelElement.graphNode == null) { return; }
 
             var parentModelElement = htmlDomNode.parentNode.modelElement;
             var dependencies = parentModelElement.graphNode.dataDependencies;

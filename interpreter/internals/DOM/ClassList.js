@@ -2,10 +2,9 @@
     /*************************************************************************************/
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    var ClassList;
-    Firecrow.N_Interpreter.ClassList = ClassList = function(htmlElement, globalObject, codeConstruct)
+    var fClassList = Firecrow.N_Interpreter.ClassList = function(htmlElement, globalObject, codeConstruct)
     {
-        if(!ValueTypeHelper.isHtmlElement(htmlElement) && !ValueTypeHelper.isDocumentFragment(htmlElement)) { ClassList.notifyError("Constructor argument has to be a HTMLElement");}
+        if(!ValueTypeHelper.isHtmlElement(htmlElement) && !ValueTypeHelper.isDocumentFragment(htmlElement)) { fClassList.notifyError("Constructor argument has to be a HTMLElement");}
 
         this.initObject(this.globalObject, codeConstruct);
 
@@ -25,22 +24,22 @@
             this.globalObject.internalExecutor.expandWithInternalFunction(classList.toggle, "toggle");
         }
 
-        this.getJsPropertyValue = function(propertyName, codeConstruct) { ClassList.notifyError("get property Class not yet implemented"); };
-        this.addJsProperty = function(propertyName, value, codeConstruct) { ClassList.notifyError("add property Class not yet implemented"); };
+        this.getJsPropertyValue = function(propertyName, codeConstruct) { fClassList.notifyError("get property Class not yet implemented"); };
+        this.addJsProperty = function(propertyName, value, codeConstruct) { fClassList.notifyError("add property Class not yet implemented"); };
     };
 
-    ClassList.notifyError = function(message) { alert("ClassList - " + message); };
+    fClassList.notifyError = function(message) { alert("ClassList - " + message); };
 
-    ClassList.prototype = new fcModel.Object();
+    fClassList.prototype = new Firecrow.N_Interpreter.Object();
 
-    ClassList.createClassList = function(htmlElement, globalObject, codeConstruct)
+    fClassList.createClassList = function(htmlElement, globalObject, codeConstruct)
     {
-        var jClassList = new ClassList(htmlElement, globalObject, codeConstruct);
+        var jClassList = new fClassList(htmlElement, globalObject, codeConstruct);
         return new Firecrow.N_Interpreter.fcValue(jClassList, jClassList, codeConstruct);
     };
 
     //https://developer.mozilla.org/en/DOM/element
-    ClassList.CONST =
+    fClassList.CONST =
     {
         INTERNAL_PROPERTIES :
         {

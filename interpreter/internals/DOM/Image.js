@@ -1,7 +1,6 @@
 (function()
 {
-    var ImageFunction;
-    Firecrow.N_Interpreter.ImageFunction = ImageFunction = function(globalObject, codeConstruct)
+    var ImageFunction = Firecrow.N_Interpreter.ImageFunction = function(globalObject, codeConstruct)
     {
         this.initObject(globalObject);
 

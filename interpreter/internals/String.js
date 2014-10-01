@@ -2,7 +2,7 @@
 { 
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    var String = Firecrow.N_Interpreter.String = function(value, globalObject, codeConstruct, isLiteral)
+    var fString = Firecrow.N_Interpreter.String = function(value, globalObject, codeConstruct, isLiteral)
     {
         this.initObject(globalObject, codeConstruct);
 
@@ -13,16 +13,16 @@
         this.addProperty("length", this.globalObject.internalExecutor.createInternalPrimitiveObject(codeConstruct, value.length), codeConstruct, false);
     };
 
-    String.notifyError = function(message) { alert("String - " + message); };
-    String.prototype = new Firecrow.N_Interpreter.Object();
-    String.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
+    fString.notifyError = function(message) { alert("String - " + message); };
+    fString.prototype = new Firecrow.N_Interpreter.Object();
+    fString.prototype.getJsPropertyValue = function(propertyName, codeConstruct)
     {
         return this.getPropertyValue(propertyName, codeConstruct);
     };
 
     var StringPrototype = Firecrow.N_Interpreter.StringPrototype = function(globalObject)
     {
-        this.initObject(globalObject, null, window.String.prototype, globalObject.fcObjectPrototype);
+        this.initObject(globalObject, null, String.prototype, globalObject.fcObjectPrototype);
         this.constructor = StringPrototype;
         this.name = "StringPrototype";
 
@@ -34,7 +34,7 @@
                 propertyName,
                 new Firecrow.N_Interpreter.fcValue
                 (
-                    window.String.prototype[propertyName],
+                    String.prototype[propertyName],
                     Firecrow.N_Interpreter.Function.createInternalNamedFunction(globalObject, propertyName, this),
                     null
                 ),
@@ -61,7 +61,7 @@
 
     var StringFunction = Firecrow.N_Interpreter.StringFunction = function(globalObject)
     {
-        this.initObject(globalObject, null, window.String, globalObject.fcFunctionPrototype);
+        this.initObject(globalObject, null, String, globalObject.fcFunctionPrototype);
 
         this.addProperty("prototype", globalObject.fcStringPrototype);
 
@@ -282,6 +282,6 @@
             return StringPrototype.CONST.INTERNAL_PROPERTIES.METHODS.indexOf(functionObject.name) != -1;
         },
 
-        notifyError: function(message) { debugger; String.notifyError(message); }
+        notifyError: function(message) { debugger; fString.notifyError(message); }
     };
 })();

@@ -65,29 +65,22 @@
             this.dependencyCreator.addDependenciesToTopBlockConstructs(breakContinueCommand.codeConstruct);
             this.globalObject.browser.callBreakContinueReturnEventCallbacks(breakContinueCommand.codeConstruct, this.globalObject.getPreciseEvaluationPositionId());
 
-            this.globalObject.browser.logConstructExecuted(breakContinueCommand.codeConstruct);
             this.dependencyCreator.createBreakContinueDependencies(breakContinueCommand.codeConstruct);
         },
 
         _evalDeclareVariableCommand: function(declareVariableCommand)
         {
             this.executionContextStack.registerIdentifier(declareVariableCommand.codeConstruct);
-
-            this.globalObject.browser.logConstructExecuted(declareVariableCommand.codeConstruct);
         },
 
         _evalDeclareFunctionCommand: function(declareFunctionCommand)
         {
             this.executionContextStack.registerFunctionDeclaration(declareFunctionCommand.codeConstruct);
-
-            this.globalObject.browser.logConstructExecuted(declareFunctionCommand.codeConstruct);
         },
 
         _evalFunctionExpressionCreationCommand: function(functionCommand)
         {
             this.executionContextStack.setExpressionValue(functionCommand.codeConstruct, this.executionContextStack.createFunctionInCurrentContext(functionCommand.codeConstruct));
-
-            this.globalObject.browser.logConstructExecuted(functionCommand.codeConstruct);
         },
 
         _evalLiteralCommand: function(evalLiteralCommand)
@@ -97,8 +90,6 @@
                 evalLiteralCommand.codeConstruct,
                 this.globalObject.internalExecutor.createInternalPrimitiveObject(evalLiteralCommand.codeConstruct, evalLiteralCommand.codeConstruct.value)
             );
-
-            this.globalObject.browser.logConstructExecuted(evalLiteralCommand.codeConstruct);
         },
 
         _evalRegExLiteralCommand: function(evalRegExCommand)
@@ -111,8 +102,6 @@
                 evalRegExCommand.codeConstruct,
                 this.globalObject.internalExecutor.createRegEx(evalRegExCommand.codeConstruct, regEx)
             );
-
-            this.globalObject.browser.logConstructExecuted(evalRegExCommand.codeConstruct);
         },
 
         _evalAssignmentCommand: function(assignmentCommand)
@@ -127,10 +116,6 @@
             else if (ASTHelper.isMemberExpression(assignmentCommand.leftSide)) { this._assignToMemberExpression(assignmentCommand.leftSide, finalValue, assignmentExpression, assignmentCommand); }
 
             this.executionContextStack.setExpressionValue(assignmentExpression, finalValue);
-
-            this.globalObject.browser.logConstructExecuted(assignmentExpression);
-            this.globalObject.browser.logConstructExecuted(assignmentCommand.leftSide);
-            this.globalObject.browser.logConstructExecuted(assignmentCommand.rightSide);
         },
 
         _evalUpdateCommand: function(evalUpdateCommand)
@@ -156,9 +141,6 @@
             }
 
             this.executionContextStack.setExpressionValue(updateExpression, this._getUpdatedCurrentValue(currentValue, updateExpression));
-
-            this.globalObject.browser.logConstructExecuted(updateExpression);
-            this.globalObject.browser.logConstructExecuted(updateExpression.argument);
         },
 
         _evalIdentifierCommand: function(identifierCommand)
@@ -180,8 +162,6 @@
                 this.dependencyCreator.createIdentifierDependencies(identifier, identifierConstruct, this.globalObject.getPreciseEvaluationPositionId());
                 this._checkSlicing(identifierConstruct);
             }
-
-            this.globalObject.browser.logConstructExecuted(identifierConstruct);
         },
 
         _evalMemberCommand: function(memberCommand)
@@ -208,10 +188,7 @@
             if(propertyObject == null || propertyObject.modificationContext != this.executionContextStack.activeContext)
             {
                 var creationConstructId = object.iValue.creationCodeConstruct != null ? object.iValue.creationCodeConstruct.nodeId : -1;
-                this.globalObject.browser.logReadingObjectPropertyOutsideCurrentScope(creationConstructId, property.jsValue, memberExpression);
             }
-
-            this.globalObject.browser.logConstructExecuted(memberExpression);
         },
 
         _evalMemberPropertyCommand: function(memberPropertyCommand)
@@ -223,17 +200,13 @@
             (
                 property,
                 memberExpression.computed ? this.executionContextStack.getExpressionValue(property)
-                    : this.globalObject.internalExecutor.createInternalPrimitiveObject(property, property.name)
+                                          : this.globalObject.internalExecutor.createInternalPrimitiveObject(property, property.name)
             );
-
-            this.globalObject.browser.logConstructExecuted(property);
         },
 
         _evalThisCommand: function(thisCommand)
         {
             this.executionContextStack.setExpressionValue(thisCommand.codeConstruct, this.executionContextStack.activeContext.thisObject);
-
-            this.globalObject.browser.logConstructExecuted(thisCommand.codeConstruct);
         },
 
         _evalUnaryExpression: function(unaryCommand)
@@ -247,7 +220,7 @@
 
             var expressionValue = null;
 
-            if (unaryExpression.operator == "-") { expressionValue = -argumentValue.jsValue; }
+                 if (unaryExpression.operator == "-") { expressionValue = -argumentValue.jsValue; }
             else if (unaryExpression.operator == "+") { expressionValue = +argumentValue.jsValue; }
             else if (unaryExpression.operator == "!") { expressionValue = !argumentValue.jsValue; }
             else if (unaryExpression.operator == "~") { expressionValue = ~argumentValue.jsValue; }
@@ -256,8 +229,6 @@
             else if (unaryExpression.operator == "delete") { expressionValue = this._evalDeleteExpression(unaryExpression, unaryCommand); }
 
             this.executionContextStack.setExpressionValue(unaryExpression, this.globalObject.internalExecutor.createInternalPrimitiveObject(unaryExpression, expressionValue));
-
-            this.globalObject.browser.logConstructExecuted(unaryExpression);
         },
 
         _evalBinaryCommand: function(binaryCommand)
@@ -288,20 +259,17 @@
                     result
                 )
             );
-
-            this.globalObject.browser.logConstructExecuted(binaryExpression);
         },
 
         _evalReturnCommand: function(returnCommand)
         {
             this.dependencyCreator.createReturnDependencies(returnCommand);
 
-            this.globalObject.browser.logConstructExecuted(returnCommand.codeConstruct);
             this.globalObject.browser.callBreakContinueReturnEventCallbacks
             (
                 returnCommand.codeConstruct,
                 this.globalObject.getPreciseEvaluationPositionId(),
-                    returnCommand.parentFunctionCommand && returnCommand.parentFunctionCommand.isExecuteCallbackCommand()
+                returnCommand.parentFunctionCommand && returnCommand.parentFunctionCommand.isExecuteCallbackCommand()
             );
 
             //If return is in event handler function
@@ -319,7 +287,7 @@
                 this._handleReturnFromCallbackFunction(returnCommand);
             }
             else if (returnCommand.parentFunctionCommand.isEvalNewExpressionCommand()
-                && (returnValue.isPrimitive() || returnValue.jsValue == null))
+                 && (returnValue.isPrimitive() || returnValue.jsValue == null))
             {
                 //DO NOTHING, should only write if returnValue is not a primitive
             }
@@ -328,8 +296,7 @@
                 this.executionContextStack.setExpressionValueInPreviousContext
                 (
                     returnCommand.parentFunctionCommand.codeConstruct,
-                        returnCommand.codeConstruct.argument != null ? returnValue
-                        : null
+                    returnCommand.codeConstruct.argument != null ? returnValue : null
                 );
             }
         },
@@ -341,8 +308,6 @@
             this.executionContextStack.setExpressionValue(arrayExpressionCommand.codeConstruct, newArray);
 
             arrayExpressionCommand.createdArray = newArray;
-
-            this.globalObject.browser.logConstructExecuted(arrayExpressionCommand.codeConstruct);
         },
 
         _evalArrayExpressionItemCreationCommand: function(arrayItemCreationCommand)
@@ -356,8 +321,6 @@
             array.iValue.push(array.jsValue, expressionItemValue, arrayItemCreationCommand.codeConstruct);
 
             this.dependencyCreator.createDataDependency(arrayItemCreationCommand.arrayExpressionCommand.codeConstruct, arrayItemCreationCommand.codeConstruct, this.globalObject.getPreciseEvaluationPositionId());
-
-            this.globalObject.browser.logConstructExecuted(arrayItemCreationCommand.codeConstruct);
         },
 
         _evalObjectCommand: function(objectCommand)
@@ -367,8 +330,6 @@
             this.executionContextStack.setExpressionValue(objectCommand.codeConstruct, newObject);
 
             objectCommand.createdObject = newObject;
-
-            this.globalObject.browser.logConstructExecuted(objectCommand.codeConstruct);
         },
 
         _evalObjectPropertyCreationCommand: function(objectPropertyCreationCommand)
@@ -388,10 +349,6 @@
 
             object.jsValue[propertyKey] = propertyValue;
             object.iValue.addProperty(propertyKey, propertyValue, objectPropertyCreationCommand.codeConstruct);
-
-            this.globalObject.browser.logConstructExecuted(propertyCodeConstruct);
-            this.globalObject.browser.logConstructExecuted(propertyCodeConstruct.key);
-            this.globalObject.browser.logConstructExecuted(propertyCodeConstruct.key.value);
         },
 
         _evalConditionalCommand: function(conditionalCommand)
@@ -399,8 +356,6 @@
             this.executionContextStack.setExpressionValue(conditionalCommand.codeConstruct, this.executionContextStack.getExpressionValue(conditionalCommand.startCommand.body));
 
             this.dependencyCreator.createDependenciesForConditionalCommand(conditionalCommand);
-
-            this.globalObject.browser.logConstructExecuted(conditionalCommand.codeConstruct);
         },
 
         _evalForInWhereCommand: function(forInWhereCommand)
@@ -467,8 +422,6 @@
                 this.executionContextStack.setIdentifierValue(declarator.id.name, nextPropertyName, declarator);
             }
             else { this.notifyError(forInWhereCommand, "Unknown forIn left statement"); }
-
-            this.globalObject.browser.logConstructExecuted(forInWhereConstruct);
         },
 
         _evalThrowExpressionCommand: function(throwCommand)
@@ -538,8 +491,6 @@
                 this.dependencyCreator.createDependenciesForLogicalExpressionItemCommand(wholeLogicalExpression);
             }
             else { this.notifyError(evalLogicalItemCommand, "The expression item is neither left nor right expression"); return; }
-
-            this.globalObject.browser.logConstructExecuted(logicalExpressionItem);
         },
 
         _evalEndLogicalCommand: function(endLogicalCommand)
@@ -554,16 +505,7 @@
                 var executedLogicalItemCommands = endLogicalCommand.executedLogicalItemExpressionCommands;
 
                 if(executedLogicalItemCommands.length == 0) { alert("There are no executed logical commands"); return; }
-
-                logicalExpressionValue.symbolicValue = fcSymbolic.SymbolicExecutor.evalLogicalExpression
-                (
-                        executedLogicalItemCommands[0] != null ?  this.executionContextStack.getExpressionValue(executedLogicalItemCommands[0].codeConstruct) : null,
-                        executedLogicalItemCommands[1] != null ?  this.executionContextStack.getExpressionValue(executedLogicalItemCommands[1].codeConstruct) : null,
-                    logicalExpression.operator
-                );
             }
-
-            this.globalObject.browser.logConstructExecuted(logicalExpression);
         },
 
         _evalCallInternalFunction: function(callInternalFunctionCommand)
@@ -587,8 +529,6 @@
                     callInternalFunctionCommand
                 )
             );
-
-            this.globalObject.browser.logConstructExecuted(callInternalFunctionCommand.codeConstruct);
         },
 
         _evalCallbackFunctionCommand: function(callbackFunctionCommand)
@@ -616,8 +556,6 @@
             this.executionContextStack.setExpressionValue(sequenceExpression, this.executionContextStack.getExpressionValue(lastExpression));
 
             this.dependencyCreator.createSequenceExpressionDependencies(sequenceExpression, lastExpression);
-
-            this.globalObject.browser.logConstructExecuted(sequenceExpression);
         },
 
         _getAssignmentValue: function(assignmentCommand)
@@ -689,13 +627,6 @@
             if(newProperty != null)
             {
                 newProperty.modificationContext = this.executionContextStack.activeContext;
-            }
-
-            if(object.iValue.creationContext != this.executionContextStack.activeContext)
-            {
-                //TODO HOW DO I UNIQUELY DIFFERENTIATE BETWEEN OBJECTS!?
-                var objectCreationConstructId = object.iValue.creationCodeConstruct != null ? object.iValue.creationCodeConstruct.nodeId : -1;
-                this.globalObject.browser.logModifyingExternalContextObject(objectCreationConstructId, property.jsValue);
             }
         },
 
@@ -788,7 +719,7 @@
         {
             var compareWith = null;
 
-                 if(rightValue == this.globalObject.arrayFunction || rightValue.jsValue == this.globalObject.arrayFunction) { compareWith = Array; }
+                 if (rightValue == this.globalObject.arrayFunction || rightValue.jsValue == this.globalObject.arrayFunction) { compareWith = Array; }
             else if (rightValue == this.globalObject.stringFunction || rightValue.jsValue == this.globalObject.stringFunction) { compareWith = String; }
             else if (rightValue == this.globalObject.regExFunction || rightValue.jsValue == this.globalObject.regExFunction) { compareWith = RegExp; }
             else if (rightValue.jsValue != undefined) { compareWith = rightValue.jsValue; }
@@ -815,11 +746,10 @@
             }
             else if(ValueTypeHelper.isString(executeCallbackCommand.originatingObject.jsValue))
             {
-                fcModel.StringExecutor.evaluateCallbackReturn
+                Firecrow.N_Interpreter.StringExecutor.evaluateCallbackReturn
                 (
                     executeCallbackCommand,
-                        returnArgument != null ? this.executionContextStack.getExpressionValue(returnArgument)
-                        : null,
+                    returnArgument != null ? this.executionContextStack.getExpressionValue(returnArgument) : null,
                     returnCommand.codeConstruct,
                     this.globalObject
                 );
@@ -855,10 +785,10 @@
             if(leftValue == null || rightValue == null) { this._callExceptionCallbacks(command); return; }
 
             var result = wholeLogicalExpression.operator == "&&" ? leftValue.jsValue && rightValue.jsValue
-                : leftValue.jsValue || rightValue.jsValue;
+                                                                 : leftValue.jsValue || rightValue.jsValue;
 
             return ValueTypeHelper.isPrimitive(result) ? this.globalObject.internalExecutor.createInternalPrimitiveObject(wholeLogicalExpression, result)
-                : result === leftValue.jsValue ? leftValue : rightValue;
+                                                       : result === leftValue.jsValue ? leftValue : rightValue;
         },
 
         _evalDeleteExpression: function(deleteExpression, command)
