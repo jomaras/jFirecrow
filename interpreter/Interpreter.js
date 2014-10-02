@@ -72,10 +72,47 @@
                     this.executionContextStack.setExpressionValue(command.codeConstruct, this.executionContextStack.activeContext.thisObject);
                     break;
                 case "ArrayExpression":
+
+                    var newArray = this.globalObject.internalExecutor.createArray(command.codeConstruct);
+                    this.executionContextStack.setExpressionValue(command.codeConstruct, newArray);
+                    command.createdArray = newArray;
+
+                    break;
                 case "ArrayExpressionItemCreation":
+
+                    var array = command.arrayExpressionCommand.createdArray;
+                    if(array == null || array.jsValue == null) { this.notifyError(command, "When evaluating array expression item the array must not be null!");  return; }
+                    var expressionItemValue = this.executionContextStack.getExpressionValue(command.codeConstruct);
+                    array.iValue.push(array.jsValue, expressionItemValue, command.codeConstruct);
+                    this.dependencyCreator.createDataDependency(command.arrayExpressionCommand.codeConstruct, command.codeConstruct, this.globalObject.getPreciseEvaluationPositionId());
+
+                    break;
                 case "ObjectExpression":
+
+                    var newObject = this.globalObject.internalExecutor.createObject(null, command.codeConstruct);
+                    this.executionContextStack.setExpressionValue(command.codeConstruct, newObject);
+                    command.createdObject = newObject;
+
+                    break;
                 case "ObjectPropertyCreation":
 
+                    var object = command.objectExpressionCommand.createdObject;
+
+                    if(object == null || object.jsValue == null) { this.notifyError(command, "When evaluating object property the object must not be null!");  return; }
+
+                    var propertyCodeConstruct = command.codeConstruct;
+
+                    var propertyValue = this.executionContextStack.getExpressionValue(propertyCodeConstruct.value);
+
+                    propertyValue = propertyValue.isPrimitive() ? propertyValue.createCopy(propertyCodeConstruct) : propertyValue;
+
+                    var propertyKey = ASTHelper.isLiteral(propertyCodeConstruct.key) ? propertyCodeConstruct.key.value
+                                                                                     : propertyCodeConstruct.key.name;
+
+                    object.jsValue[propertyKey] = propertyValue;
+                    object.iValue.addProperty(propertyKey, propertyValue, command.codeConstruct);
+
+                    break;
                 case "StartWithStatement":
                     this.executionContextStack.activeContext.pushToScopeChain
                     (
@@ -90,18 +127,101 @@
                     break;
 
                 case "StartTryStatement":
+                    //Fall through on purpose
                 case "EndTryStatement":
                     this._processTryCommand(command);
                     break;
                 case "StartCatchStatement":
+
+                    this.executionContextStack.setIdentifierValue
+                    (
+                        command.codeConstruct.param.name,
+                        command.exceptionArgument || this.globalObject.internalExecutor.createNonConstructorObject(command.codeConstruct),
+                        command.throwingCommand != null ? command.throwingCommand.codeConstruct
+                                                        : null,
+                        true
+                    );
+
+                    if(command.exceptionArgument != null && command.exceptionArgument.codeConstruct != null)
+                    {
+                        this.dependencyCreator.createDataDependency(command.codeConstruct.param, command.exceptionArgument.codeConstruct);
+                    }
+                    break;
                 case "EndCatchStatement":
+                    this.executionContextStack.restoreIdentifier(command.codeConstruct.param.name);
+                    break;
                 case "StartSwitchStatement":
+                    break;
                 case "EndSwitchStatement":
+                    break;
                 case "Case":
+                    break;
                 case "FunctionExpressionCreation":
+
+                    this.executionContextStack.setExpressionValue(command.codeConstruct, this.executionContextStack.createFunctionInCurrentContext(command.codeConstruct));
+                    break;
+
                 case "EvalSequenceExpression":
+
+                    var sequenceExpression = command.codeConstruct;
+                    var lastExpression = sequenceExpression.expressions[sequenceExpression.expressions.length - 1];
+
+                    this.executionContextStack.setExpressionValue(sequenceExpression, this.executionContextStack.getExpressionValue(lastExpression));
+
+                    this.dependencyCreator.createSequenceExpressionDependencies(sequenceExpression, lastExpression);
+
+                    break;
+
                 case "EvalUnaryExpression":
+
+                    var unaryExpression = command.codeConstruct;
+                    var argumentValue = this.executionContextStack.getExpressionValue(unaryExpression.argument);
+
+                    this.dependencyCreator.createDataDependency(unaryExpression, unaryExpression.argument);
+
+                    if(argumentValue == null && unaryExpression.operator != "typeof") { this._callExceptionCallbacks(command); return; }
+
+                    var expressionValue = null;
+
+                         if (unaryExpression.operator == "-") { expressionValue = -argumentValue.jsValue; }
+                    else if (unaryExpression.operator == "+") { expressionValue = +argumentValue.jsValue; }
+                    else if (unaryExpression.operator == "!") { expressionValue = !argumentValue.jsValue; }
+                    else if (unaryExpression.operator == "~") { expressionValue = ~argumentValue.jsValue; }
+                    else if (unaryExpression.operator == "typeof") { expressionValue = argumentValue == null ? "undefined" : typeof argumentValue.jsValue; }
+                    else if (unaryExpression.operator == "void") { expressionValue = void argumentValue.jsValue;}
+                    else if (unaryExpression.operator == "delete") { expressionValue = this._evalDeleteExpression(unaryExpression, command); }
+
+                    this.executionContextStack.setExpressionValue(unaryExpression, this.globalObject.internalExecutor.createInternalPrimitiveObject(unaryExpression, expressionValue));
+
                 case "EvalBinaryExpression":
+
+                    var binaryExpression = command.codeConstruct;
+
+                    this.dependencyCreator.createBinaryExpressionDependencies(binaryExpression);
+
+                    var leftValue = this.executionContextStack.getExpressionValue(binaryExpression.left);
+                    var rightValue = this.executionContextStack.getExpressionValue(binaryExpression.right);
+
+                    if(leftValue == null) { this._callExceptionCallbacks(command); return; }
+                    if(rightValue == null) { this._callExceptionCallbacks(command); return; }
+
+                    if(binaryExpression.operator == "in")
+                    {
+                        this.dependencyCreator.createBinaryExpressionInDependencies(binaryExpression, rightValue, leftValue);
+                    }
+
+                    var result = this._evalBinaryExpression(leftValue, rightValue, binaryExpression.operator);
+
+                    this.executionContextStack.setExpressionValue
+                    (
+                        binaryExpression,
+                        this.globalObject.internalExecutor.createInternalPrimitiveObject
+                        (
+                            binaryExpression,
+                            result
+                        )
+                    );
+
                 case "EvalAssignmentExpression":
 
                     var assignmentExpression = command.codeConstruct;
@@ -117,15 +237,91 @@
 
                     break;
                 case "EvalUpdateExpression":
+
+                    var updateExpression = command.codeConstruct;
+                    var currentValue = this.executionContextStack.getExpressionValue(updateExpression.argument);
+
+                    this.dependencyCreator.createUpdateExpressionDependencies(updateExpression);
+
+                    if(currentValue == null || currentValue.jsValue == null) { this._callExceptionCallbacks(command); return; }
+
+                    if(ASTHelper.isIdentifier(updateExpression.argument))
+                    {
+                        this._assignToIdentifier(updateExpression.argument, this._getUpdateValue(currentValue, updateExpression), updateExpression);
+                    }
+                    else if(ASTHelper.isMemberExpression(updateExpression.argument))
+                    {
+                        this._assignToMemberExpression(updateExpression.argument, this._getUpdateValue(currentValue, updateExpression), updateExpression, command);
+                    }
+                    else
+                    {
+                        this.notifyError(command, "Unknown code construct when updating expression!");
+                    }
+
+                    this.executionContextStack.setExpressionValue(updateExpression, this._getUpdatedCurrentValue(currentValue, updateExpression));
+
                 case "EvalBreak":
+                case "EvalContinue":
                     this.executionContextStack._popTillBreakContinue(command.codeConstruct);
                     break;
-                case "EvalContinue":
                 case "EvalCallbackFunction":
+                    this.dependencyCreator.createCallbackFunctionCommandDependencies(command);
+
+                    this.globalObject.logCallbackExecution
+                    (
+                        command.codeConstruct,
+                        command.parentInitCallbackCommand != null ? command.parentInitCallbackCommand.codeConstruct : null
+                    );
+
+                    if(command.isLastCallbackCommand)
+                    {
+                        this.globalObject.browser.logEndExecutingCallbacks(command.codeConstruct);
+                    }
+                    break;
                 case "StartEvalLogicalExpression":
+                    break;
                 case "EvalLogicalExpressionItem":
+
+                    var parentExpressionCommand = command.parentLogicalExpressionCommand;
+
+                    var wholeLogicalExpression = parentExpressionCommand.codeConstruct;
+                    var logicalExpressionItem = command.codeConstruct;
+
+                    command.parentEndLogicalExpressionCommand.executedLogicalItemExpressionCommands.push(command);
+
+                    if(logicalExpressionItem == wholeLogicalExpression.left)
+                    {
+                        var value = this.executionContextStack.getExpressionValue(logicalExpressionItem);
+
+                        this.executionContextStack.setExpressionValue(wholeLogicalExpression, value);
+
+                        command.shouldDeleteFollowingLogicalCommands = this._isLogicalExpressionDoneWithEvaluation(value, wholeLogicalExpression.operator);
+                    }
+                    else if(logicalExpressionItem == wholeLogicalExpression.right)
+                    {
+                        this.executionContextStack.setExpressionValue(wholeLogicalExpression, this._getLogicalExpressionValue(wholeLogicalExpression, command));
+
+                        this.dependencyCreator.createDependenciesForLogicalExpressionItemCommand(wholeLogicalExpression);
+                    }
+                    else { this.notifyError(command, "The expression item is neither left nor right expression"); return; }
+
                 case "EndEvalLogicalExpression":
+                    this.dependencyCreator.createDependenciesForLogicalExpression(command);
+
+                    var logicalExpression = command.codeConstruct;
+                    var logicalExpressionValue = this.executionContextStack.getExpressionValue(logicalExpression);
+
+                    if(logicalExpressionValue != null)
+                    {
+                        var executedLogicalItemCommands = command.executedLogicalItemExpressionCommands;
+
+                        if(executedLogicalItemCommands.length == 0) { alert("There are no executed logical commands"); return; }
+                    }
                 case "EvalConditionalExpression":
+
+                    this.executionContextStack.setExpressionValue(command.codeConstruct, this.executionContextStack.getExpressionValue(command.startCommand.body));
+                    this.dependencyCreator.createDependenciesForConditionalCommand(command);
+
                 case "EndEvalConditionalExpression":
                 case "EvalNewExpression":
                 case "EvalCallExpression":
@@ -170,10 +366,54 @@
                     break;
                 case "EvalReturnExpression":
 
+                    this.dependencyCreator.createReturnDependencies(command);
+
+                    this.globalObject.browser.callBreakContinueReturnEventCallbacks
+                    (
+                        command.codeConstruct,
+                        this.globalObject.getPreciseEvaluationPositionId(),
+                        command.parentFunctionCommand && command.parentFunctionCommand.isExecuteCallbackCommand()
+                    );
+
+                    //If return is in event handler function
+                    if(command.parentFunctionCommand == null)
+                    {
+                        break;
+                    }
+
+                    command.parentFunctionCommand.executedReturnCommand = command;
+
+                    var returnValue = this.executionContextStack.getExpressionValue(command.codeConstruct.argument);
+
+                    if(command.parentFunctionCommand.isExecuteCallbackCommand())
+                    {
+                        this._handleReturnFromCallbackFunction(command);
+                    }
+                    else if (command.parentFunctionCommand.isEvalNewExpressionCommand()
+                        && (returnValue.isPrimitive() || returnValue.jsValue == null))
+                    {
+                        //DO NOTHING, should only write if returnValue is not a primitive
+                    }
+                    else
+                    {
+                        this.executionContextStack.setExpressionValueInPreviousContext
+                        (
+                            command.parentFunctionCommand.codeConstruct,
+                            command.codeConstruct.argument != null ? returnValue : null
+                        );
+                    }
+
+
                 case "EvalThrowExpression":
                     this._processThrowCommand(command);
                     this._removeCommandsAfterException(command);
 
+                    this.dependencyCreator.createDataDependency
+                    (
+                        command.codeConstruct,
+                        command.codeConstruct.argument,
+                        this.globalObject.getPreciseEvaluationPositionId()
+                    )
                     break;
                 case "EvalIdentifier":
                     var identifierConstruct = command.codeConstruct;
@@ -219,21 +459,236 @@
                 case "ForUpdateStatement":
                 case "EndLoopStatement":
                 case "EvalForInWhere":
+
+                    var forInWhereConstruct = command.codeConstruct;
+
+                    var whereObject = this.executionContextStack.getExpressionValue(forInWhereConstruct.right);
+
+                    if(whereObject.iValue == null) { command.willBodyBeExecuted = false; return; }
+
+                    if(!command.propertyNames)
+                    {
+                        var isFirstIteration = true;
+                        command.propertyNames = whereObject.iValue.getPropertyNames();
+                    }
+
+                    this._logForInIteration(command, whereObject.iValue, isFirstIteration);
+
+                    while(command.propertyNames.length > 0 && !propertyValue)
+                    {
+                        var nextPropertyNameString = command.propertyNames[0];
+                        ValueTypeHelper.removeFromArrayByIndex(command.propertyNames, 0);
+
+                        var propertyValue = whereObject.iValue.getPropertyValue(nextPropertyNameString);
+                    }
+
+                    command.willBodyBeExecuted = !!propertyValue;
+
+                    if(!propertyValue) { return; }
+
+                    var propertyNameCodeConstruct = null;
+
+                    var property = whereObject.iValue.getProperty(nextPropertyNameString);
+
+                    if(property != null && property.declarationPosition != null && property.declarationPosition.codeConstruct != null)
+                    {
+                        var declarationConstruct = property.declarationPosition.codeConstruct;
+                        if(declarationConstruct.key != null) //Object literal
+                        {
+                            propertyNameCodeConstruct = declarationConstruct.key;
+                        }
+                        else if(ASTHelper.isAssignmentExpression()) //Assignment
+                        {
+                            propertyNameCodeConstruct = declarationConstruct.left;
+                        }
+                    }
+                    else
+                    {
+                        propertyNameCodeConstruct = forInWhereConstruct.left;
+                    }
+
+                    var nextPropertyName = this.globalObject.internalExecutor.createInternalPrimitiveObject(propertyNameCodeConstruct, nextPropertyNameString);
+
+                    this.dependencyCreator.createDependenciesInForInWhereCommand(forInWhereConstruct, whereObject, nextPropertyName, isFirstIteration);
+
+                    if(ASTHelper.isIdentifier(forInWhereConstruct.left))
+                    {
+                        this.executionContextStack.setIdentifierValue(forInWhereConstruct.left.name, nextPropertyName, forInWhereConstruct.left);
+                    }
+                    else if (ASTHelper.isVariableDeclaration(forInWhereConstruct.left))
+                    {
+                        var declarator = forInWhereConstruct.left.declarations[0];
+
+                        this.executionContextStack.setIdentifierValue(declarator.id.name, nextPropertyName, declarator);
+                    }
+                    else { this.notifyError(command, "Unknown forIn left statement"); }
+
+                    break;
                 case "EvalConditionalExpressionBody":
                 case "CallInternalConstructor":
                 case "CallInternalFunction":
+                    this.dependencyCreator.createDependenciesForCallInternalFunction(command);
+
+                    this.executionContextStack.setExpressionValue
+                    (
+                        command.codeConstruct,
+                        this.globalObject.internalExecutor.executeFunction
+                        (
+                            this._getThisObjectFromCallInternalFunctionCommand(command),
+                            command.functionObject,
+                            this._getArgumentsFromInternalFunctionCall
+                            (
+                                command,
+                                command.codeConstruct != null ? command.codeConstruct.arguments : []
+                            ),
+                            command.codeConstruct,
+                            command
+                        )
+                    );
+                    break;
                 case "CallCallbackMethod":
                 case "ExecuteCallback":
                 case "ConvertToPrimitive":
                 case "Label":
                 case "FinishEval":
                     command.lastEvaluatedConstruct = this._getLastEvaluatedConstruct();
+
+                    this.executionContextStack.setExpressionValue
+                    (
+                        command.codeConstruct,
+                        this.executionContextStack.getExpressionValue(command.lastEvaluatedConstruct)
+                    );
                     break;
                 case "StartEval":
             }
 
             if (command.removesCommands) { this._processRemovingCommandsCommand(command); }
             if (command.generatesNewCommands) { this._processGeneratingNewCommandsCommand(command); }
+        },
+
+        _isLogicalExpressionDoneWithEvaluation: function(value, operator)
+        {
+            return  (value.jsValue && operator == "||") || (!value.jsValue && operator == "&&");
+        },
+
+        _getLogicalExpressionValue: function(wholeLogicalExpression, command)
+        {
+            var leftValue = this.executionContextStack.getExpressionValue(wholeLogicalExpression.left);
+            var rightValue = this.executionContextStack.getExpressionValue(wholeLogicalExpression.right);
+
+            if(leftValue == null || rightValue == null) { this._callExceptionCallbacks(command); return; }
+
+            var result = wholeLogicalExpression.operator == "&&" ? leftValue.jsValue && rightValue.jsValue
+                                                                 : leftValue.jsValue || rightValue.jsValue;
+
+            return ValueTypeHelper.isPrimitive(result) ? this.globalObject.internalExecutor.createInternalPrimitiveObject(wholeLogicalExpression, result)
+                                                        : result === leftValue.jsValue ? leftValue
+                                                                                       : rightValue;
+        },
+
+        _getUpdatedCurrentValue:function(currentValue, updateExpression)
+        {
+            var result = updateExpression.prefix ? updateExpression.operator == "++" ? ++currentValue.jsValue : --currentValue.jsValue
+                                                                                     : updateExpression.operator == "++" ? currentValue.jsValue++
+                                                                                                                         : currentValue.jsValue--;
+
+            return this.globalObject.internalExecutor.createInternalPrimitiveObject(updateExpression, result);
+        },
+
+        _getUpdateValue: function(currentValue, updateExpression)
+        {
+            var result = updateExpression.operator == "++" ? (currentValue.jsValue - 0) + 1 : (currentValue.jsValue - 0) - 1;
+            return this.globalObject.internalExecutor.createInternalPrimitiveObject(updateExpression, result);
+        },
+
+        _getAssignmentValue: function(assignmentCommand)
+        {
+            var finalValue = null;
+            var operator = assignmentCommand.operator;
+
+            if(operator === "=") { finalValue = this.executionContextStack.getExpressionValue(assignmentCommand.rightSide); }
+            else
+            {
+                var leftValue = this.executionContextStack.getExpressionValue(assignmentCommand.leftSide);
+                var rightValue = this.executionContextStack.getExpressionValue(assignmentCommand.rightSide);
+
+                var result = null;
+
+                     if (operator == "+=") { result = leftValue.jsValue + rightValue.jsValue; }
+                else if (operator == "-=") { result = leftValue.jsValue - rightValue.jsValue; }
+                else if (operator == "*=") { result = leftValue.jsValue * rightValue.jsValue; }
+                else if (operator == "/=") { result = leftValue.jsValue / rightValue.jsValue; }
+                else if (operator == "%=") { result = leftValue.jsValue % rightValue.jsValue; }
+                else if (operator == "<<=") { result = leftValue.jsValue << rightValue.jsValue; }
+                else if (operator == ">>=") { result = leftValue.jsValue >> rightValue.jsValue; }
+                else if (operator == ">>>=") { result = leftValue.jsValue >>> rightValue.jsValue; }
+                else if (operator == "|=") { result = leftValue.jsValue | rightValue.jsValue; }
+                else if (operator == "^=") { result = leftValue.jsValue ^ rightValue.jsValue; }
+                else if (operator == "&=") { result = leftValue.jsValue & rightValue.jsValue; }
+                else { this.notifyError(assignmentCommand, "jsValue assignment operator!"); return; }
+
+                finalValue = this.globalObject.internalExecutor.createInternalPrimitiveObject(assignmentCommand.codeConstruct, result);
+            }
+
+            return finalValue.isPrimitive() ? finalValue.createCopy(assignmentCommand.rightSide) : finalValue;
+        },
+
+        _evalBinaryExpression: function(leftValue, rightValue, operator)
+        {
+                 if (operator == "==") { return leftValue.jsValue == rightValue.jsValue;}
+            else if (operator == "!=") { return leftValue.jsValue != rightValue.jsValue; }
+            else if (operator == "===") { return leftValue.jsValue === rightValue.jsValue; }
+            else if (operator == "!==") { return leftValue.jsValue !== rightValue.jsValue; }
+            else if (operator == "<") { return leftValue.jsValue < rightValue.jsValue; }
+            else if (operator == "<=") { return leftValue.jsValue <= rightValue.jsValue; }
+            else if (operator == ">") { return leftValue.jsValue > rightValue.jsValue; }
+            else if (operator == ">=") { return leftValue.jsValue >= rightValue.jsValue; }
+            else if (operator == "<<") { return leftValue.jsValue << rightValue.jsValue; }
+            else if (operator == ">>") { return leftValue.jsValue >> rightValue.jsValue; }
+            else if (operator == ">>>") { return leftValue.jsValue >>> rightValue.jsValue; }
+            else if (operator == "-") { return leftValue.jsValue - rightValue.jsValue; }
+            else if (operator == "*") { return leftValue.jsValue * rightValue.jsValue; }
+            else if (operator == "/") { return leftValue.jsValue / rightValue.jsValue; }
+            else if (operator == "%") { return leftValue.jsValue % rightValue.jsValue; }
+            else if (operator == "|") { return leftValue.jsValue | rightValue.jsValue; }
+            else if (operator == "^") { return leftValue.jsValue ^ rightValue.jsValue; }
+            else if (operator == "&") { return leftValue.jsValue & rightValue.jsValue; }
+            else if (operator == "in") { return leftValue.jsValue in rightValue.jsValue; }
+            else if (operator == "+") { return this._evalAdd(leftValue.jsValue, rightValue.jsValue); }
+            else if (operator == "instanceof") { return this._evalInstanceOf(leftValue, rightValue);}
+            else { this.notifyError(null, "Unknown operator when evaluating binary expression"); return; }
+        },
+
+        _evalDeleteExpression: function(deleteExpression, command)
+        {
+            if(ASTHelper.isIdentifier(deleteExpression.argument))
+            {
+                this.executionContextStack.deleteIdentifier(deleteExpression.argument.name);
+                return true;
+            }
+            else if(ASTHelper.isMemberExpression(deleteExpression.argument))
+            {
+                var object = this.executionContextStack.getExpressionValue(deleteExpression.argument.object);
+
+                if(object == null) { this._callExceptionCallbacks(command); return; }
+
+                var propertyName = "";
+
+                if(deleteExpression.argument.computed)
+                {
+                    var propertyValue = this.executionContextStack.getExpressionValue(deleteExpression.argument.property);
+                    propertyName = propertyValue != null ? propertyValue.jsValue : "";
+                }
+                else
+                {
+                    propertyName = deleteExpression.argument.property.name;
+                }
+
+                object.iValue.deleteProperty(propertyName, deleteExpression);
+                return delete object.jsValue[propertyName];
+            }
+
+            return false;
         },
 
         _assignToIdentifier: function(identifier, finalValue, assignmentExpression)
@@ -274,6 +729,169 @@
             {
                 newProperty.modificationContext = this.executionContextStack.activeContext;
             }
+        },
+
+        registerExceptionCallback: function(callback, thisObject)
+        {
+            if(!ValueTypeHelper.isFunction(callback)) { this.notifyError(null, "Exception callback has to be a function!"); return; }
+
+            this.exceptionCallbacks.push({callback: callback, thisObject: thisObject || this});
+        },
+
+
+
+
+
+        _hasAddJsPropertyFunction: function(object)
+        {
+            return object != null && object.iValue != null && object.iValue.addJsProperty != null;
+        },
+
+
+
+
+
+        _checkSlicing: function(identifierConstruct)
+        {
+            if(this.globalObject.shouldTrackIdentifiers && this.globalObject.satisfiesIdentifierSlicingCriteria(identifierConstruct))
+            {
+                this.globalObject.browser.callImportantConstructReachedCallbacks(identifierConstruct);
+            }
+        },
+
+
+
+        _evalAdd: function(leftValue, rightValue)
+        {
+            if(ValueTypeHelper.arePrimitive(leftValue, rightValue))
+            {
+                return leftValue + rightValue;
+            }
+
+            //TODO - this needs more tests!
+            if(typeof leftValue== "object" && !(leftValue instanceof String) && leftValue != null
+                || (typeof rightValue== "object" && !(rightValue instanceof String) && rightValue != null))
+            {
+                //TODO - temp jQuery hack
+                if(ValueTypeHelper.isArray(leftValue) && ValueTypeHelper.isArray(rightValue))
+                {
+                    return this.globalObject.getJsValues(leftValue).join("")
+                        + this.globalObject.getJsValues(rightValue).join("")
+                }
+                else if (ValueTypeHelper.isObject(rightValue) || ValueTypeHelper.isObject(leftValue))
+                {
+                    console.log("Concatenating strings from object!");
+                    return leftValue + rightValue;
+                }
+                else
+                {
+                    this.notifyError(null, "Still not handling implicit toString conversion in binary expression!");
+                    return null;
+                }
+            }
+
+            return null;
+        },
+
+        _evalInstanceOf: function(leftValue, rightValue)
+        {
+            var compareWith = null;
+
+            if (rightValue == this.globalObject.arrayFunction || rightValue.jsValue == this.globalObject.arrayFunction) { compareWith = Array; }
+            else if (rightValue == this.globalObject.stringFunction || rightValue.jsValue == this.globalObject.stringFunction) { compareWith = String; }
+            else if (rightValue == this.globalObject.regExFunction || rightValue.jsValue == this.globalObject.regExFunction) { compareWith = RegExp; }
+            else if (rightValue.jsValue != undefined) { compareWith = rightValue.jsValue; }
+            else { this.notifyError(null, "Unhandled instanceof"); }
+
+            return leftValue.jsValue instanceof compareWith;
+        },
+
+        _handleReturnFromCallbackFunction: function(returnCommand)
+        {
+            var executeCallbackCommand = returnCommand.parentFunctionCommand;
+            var returnArgument = returnCommand.codeConstruct.argument;
+
+            if(ValueTypeHelper.isArray(executeCallbackCommand.originatingObject.jsValue)
+                || ValueTypeHelper.isArrayLike(executeCallbackCommand.originatingObject.jsValue))
+            {
+                fcModel.ArrayCallbackEvaluator.evaluateCallbackReturn
+                (
+                    executeCallbackCommand,
+                        returnArgument != null ? this.executionContextStack.getExpressionValue(returnArgument)
+                        : null,
+                    returnCommand.codeConstruct
+                );
+            }
+            else if(ValueTypeHelper.isString(executeCallbackCommand.originatingObject.jsValue))
+            {
+                Firecrow.N_Interpreter.StringExecutor.evaluateCallbackReturn
+                (
+                    executeCallbackCommand,
+                        returnArgument != null ? this.executionContextStack.getExpressionValue(returnArgument) : null,
+                    returnCommand.codeConstruct,
+                    this.globalObject
+                );
+            }
+            else { this.notifyError(returnCommand, "Unhandled callback function"); }
+        },
+
+        _getPropertyValue: function(object, property, memberExpression)
+        {
+            var propertyValue = object.iValue.getJsPropertyValue(property.jsValue, memberExpression);
+
+
+            if(!ValueTypeHelper.isOfType(propertyValue, fcModel.fcValue) && propertyValue != this.globalObject)
+            {
+                if(propertyValue != null && propertyValue.fcValue != null && !ValueTypeHelper.isPrimitive(propertyValue)) { propertyValue = propertyValue.fcValue; }
+                else if (ValueTypeHelper.isPrimitive(propertyValue)) { propertyValue = this.globalObject.internalExecutor.createInternalPrimitiveObject(memberExpression, propertyValue);}
+                else { this.notifyError(null, "The property value should be of type JsValue"); return; }
+            }
+
+            return propertyValue;
+        },
+
+
+
+
+
+
+
+        _getThisObjectFromCallInternalFunctionCommand: function(callInternalFunctionCommand)
+        {
+            return callInternalFunctionCommand.isCall || callInternalFunctionCommand.isApply
+                ? this.executionContextStack.getExpressionValue(callInternalFunctionCommand.codeConstruct.arguments[0])
+                : callInternalFunctionCommand.thisObject;
+        },
+
+        _getArgumentsFromInternalFunctionCall: function(callInternalFunctionCommand, callExpressionArgs)
+        {
+            if(callInternalFunctionCommand.isCall)
+            {
+                return this.executionContextStack.getExpressionsValues(ValueTypeHelper.getWithoutFirstElement(callExpressionArgs));
+            }
+
+            if(callInternalFunctionCommand.isApply)
+            {
+                var secondArgumentValue = this.executionContextStack.getExpressionValue(callExpressionArgs[1]);
+
+                return secondArgumentValue != null && secondArgumentValue.jsValue != null ? secondArgumentValue.jsValue : [];
+            }
+            return callExpressionArgs == null ? [] : this.executionContextStack.getExpressionsValues(callExpressionArgs);
+        },
+
+        _logForInIteration: function(forInWhereCommand, whereObject, isFirstIteration)
+        {
+            if(forInWhereCommand == null || !isFirstIteration || whereObject == null) { return; }
+
+            this.globalObject.logForInIteration(forInWhereCommand.codeConstruct, whereObject.proto);
+        },
+
+        _callExceptionCallbacks: function(exceptionInfo)
+        {
+            this.exceptionCallbacks.forEach(function(callbackObject)
+            {
+                callbackObject.callback.call(callbackObject.thisObject, exceptionInfo);
+            });
         },
 
         _getLastEvaluatedConstruct: function()
