@@ -581,7 +581,11 @@
         {
             var criterion = slicingCriteria[i];
 
-            if(criterion.type == "READ_IDENTIFIER") { this.identifierSlicingCriteria.push(criterion); }
+            if(criterion.type == "READ_IDENTIFIER")
+            {
+                this.shouldTrackIdentifiers = true;
+                this.identifierSlicingCriteria.push(criterion);
+            }
             else if (criterion.type == "DOM_MODIFICATION")
             {
                 if(criterion.cssSelector === "all") { this.includeAllDomModifications = true; }
@@ -1135,7 +1139,7 @@
             var htmlElement = jsHtmlElement.jsValue;
             var computedStyle = globalObject.origWindow.getComputedStyle.apply(globalObject.origWindow, args);
 
-            return fcModel.CSSStyleDeclaration.createStyleDeclaration(htmlElement, computedStyle, globalObject, callExpression);
+            return Firecrow.N_Interpreter.CSSStyleDeclaration.createStyleDeclaration(htmlElement, computedStyle, globalObject, callExpression);
         },
 
         _setTimingEvents: function(functionName, handler, timePeriod, sentArguments, globalObject, callExpression)

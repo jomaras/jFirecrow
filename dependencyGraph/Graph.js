@@ -11,8 +11,6 @@
         this.nodes = [];
 
         this.htmlNodes = [];
-        this.cssNodes = [];
-        this.jsNodes = [];
 
         this.importantConstructDependencyIndexMapping = [];
         this.breakContinueReturnEventsMapping = [];
@@ -36,36 +34,53 @@
 
     Graph.prototype =
     {
-        addNode: function(node)
+        createHtmlNode: function(nodeModel)
         {
+            var node =  new fcGraph.Node(nodeModel, "html");
+
             this.nodes.push(node);
-
-                 if (node.type == "html") { this.htmlNodes.push(node); }
-            else if (node.type == "css") { this.cssNodes.push(node); }
-            else if (node.type == "js") { this.jsNodes.push(node); }
+            this.htmlNodes.push(node);
         },
 
-        handleNodeCreated: function(nodeModelObject, type, isDynamic)
+        createJsNode: function(nodeModel)
         {
-            this.addNode(new fcGraph.Node(nodeModelObject, type, isDynamic));
+            this.nodes.push(new fcGraph.Node(nodeModel, "js"));
         },
 
-        handleNodeInserted: function(nodeModelObject, parentNodeModelObject, isDynamic)
+        createDynamicJsNode: function(nodeModel)
         {
-            if(nodeModelObject == null) { this.notifyError("nodeModelObject must not be null!"); return; }
+            this.nodes.push(new fcGraph.Node(nodeModel, "js", true));
+        },
 
+        createCssNode: function(nodeModel)
+        {
+            this.nodes.push(new fcGraph.Node(nodeModel, "css"));
+        },
+
+        insertNode: function(nodeModel, parentNodeModelObject, isDynamic)
+        {
             if(parentNodeModelObject != null)
             {
-                nodeModelObject.graphNode.addStructuralDependency(parentNodeModelObject.graphNode, isDynamic);
+                nodeModel.graphNode.addStructuralDependency(parentNodeModelObject.graphNode, isDynamic);
             }
         },
 
-        handleDataDependencyEstablished: function(sourceNodeModelObject, targetNodeModelObject, dependencyCreationInfo, destinationNodeDependencyInfo, shouldNotFollowDependency, isValueDependency)
+        logImportantConstructEvaluated: function(modelNode)
+        {
+            var dataDependencies = modelNode.graphNode.dataDependencies;
+            this.importantConstructDependencyIndexMapping.push
+            ({
+                codeConstruct: modelNode,
+                dependencyIndex: dataDependencies.length > 0 ? dataDependencies[dataDependencies.length - 1].index : -1
+            });
+        },
+
+        createDependency: function(sourceNodeModelObject, targetNodeModelObject, dependencyCreationInfo, destinationNodeDependencyInfo, shouldNotFollowDependency, isValueDependency)
         {
             if(sourceNodeModelObject == null || targetNodeModelObject == null) { return; }
             if(targetNodeModelObject.isEvalCreatedNode)
             {
-                this.handleDataDependencyEstablished(sourceNodeModelObject, targetNodeModelObject.evalConstruct, dependencyCreationInfo, destinationNodeDependencyInfo, shouldNotFollowDependency, isValueDependency)
+                this.createDependency(sourceNodeModelObject, targetNodeModelObject.evalConstruct, dependencyCreationInfo, destinationNodeDependencyInfo, shouldNotFollowDependency, isValueDependency)
             }
             if(ValueTypeHelper.isArray(targetNodeModelObject))
             {
@@ -74,8 +89,6 @@
                     var edge = sourceNodeModelObject.graphNode.addDataDependency(targetNodeModelObject[i].graphNode, true, this.dependencyEdgesCounter++, dependencyCreationInfo, destinationNodeDependencyInfo, shouldNotFollowDependency);
                     edge.isValueDependency = isValueDependency;
                     sourceNodeModelObject.maxCreatedDependencyIndex = edge.index;
-
-                    if(DependencyGraph.sliceUnions) {  this._registerDependencyCallExpressionRelationship(edge); }
 
                     this.executionContextIndexMap[this.executionContextId].push(edge.index);
                     edge.executionContextId = this.executionContextId;
@@ -86,85 +99,7 @@
                 var edge = sourceNodeModelObject.graphNode.addDataDependency(targetNodeModelObject.graphNode, true, this.dependencyEdgesCounter++, dependencyCreationInfo, destinationNodeDependencyInfo, shouldNotFollowDependency);
                 edge.isValueDependency = isValueDependency;
                 sourceNodeModelObject.maxCreatedDependencyIndex = edge.index;
-
-                this._registerDependencyCallExpressionRelationship(edge);
             }
-        },
-
-        handleControlDependencyEstablished: function(sourceNodeModelObject, targetNodeModelObject, dependencyCreationInfo, destinationNodeDependencyInfo, isPreviouslyExecutedBlockStatementDependency)
-        {
-            if(sourceNodeModelObject == null || targetNodeModelObject == null) { return; }
-
-            if(dependencyCreationInfo != null && dependencyCreationInfo.isReturnDependency)
-            {
-                var enterFunctionPoints = sourceNodeModelObject.graphNode.enterFunctionPoints;
-                if(enterFunctionPoints != null)
-                {
-                    dependencyCreationInfo.callDependencyMaxIndex = enterFunctionPoints[enterFunctionPoints.length - 1].lastDependencyIndex;
-                }
-            }
-
-            var edge = sourceNodeModelObject.graphNode.addControlDependency
-            (
-                targetNodeModelObject.graphNode,
-                true,
-                this.dependencyEdgesCounter++,
-                dependencyCreationInfo,
-                destinationNodeDependencyInfo,
-                false,
-                isPreviouslyExecutedBlockStatementDependency
-            );
-            sourceNodeModelObject.maxCreatedDependencyIndex = edge.index;
-
-            this._registerDependencyCallExpressionRelationship(edge);
-
-            this.executionContextIndexMap[this.executionContextId].push(edge.index);
-            edge.executionContextId = this.executionContextId;
-        },
-
-        _registerDependencyCallExpressionRelationship: function(edge)
-        {
-            this.dependencyCallExpressionMapping[edge.index] = this.currentCallExpressionsHardCopy;
-        },
-
-        handleCallbackCalled: function(callbackConstruct, callCallbackConstruct, evaluationPosition)
-        {
-            if(this.callbackExecutionMap[callbackConstruct.nodeId] == null)
-            {
-                this.callbackExecutionMap[callbackConstruct.nodeId] =
-                {
-                    callbackConstruct: callbackConstruct,
-                    callCallbackMap: {}
-                }
-            }
-
-            if(this.callbackExecutionMap[callbackConstruct.nodeId].callCallbackMap[callCallbackConstruct.nodeId] == null)
-            {
-                this.callbackExecutionMap[callbackConstruct.nodeId].callCallbackMap[callCallbackConstruct.nodeId] =
-                {
-                    callCallbackConstruct: callCallbackConstruct,
-                    evaluationPositions: []
-                };
-            }
-
-            this.callbackExecutionMap[callbackConstruct.nodeId].callCallbackMap[callCallbackConstruct.nodeId].evaluationPositions.push(evaluationPosition);
-        },
-
-        callbackExecutionMap: {},
-
-        handleControlFlowConnection: function(sourceNode)
-        {
-            //sourceNode.hasBeenExecuted = true;
-        },
-
-        handleImportantConstructReached: function(sourceNode)
-        {
-            var dataDependencies = sourceNode.graphNode.dataDependencies;
-            this.importantConstructDependencyIndexMapping.push
-            ({
-                codeConstruct: sourceNode,
-                dependencyIndex: dataDependencies.length > 0 ? dataDependencies[dataDependencies.length - 1].index : -1
-            });
         },
 
         handleBreakContinueReturnEventReached: function(sourceNode,  evaluationPosition, isCallbackReturn)
@@ -185,19 +120,6 @@
         _callbackStartStopTrackingMap: {},
         _currentCallbackStartStopExecutionIdStack: [],
 
-        handleCallbackStartedExecuting: function(functionConstruct)
-        {
-            /*if(functionConstruct == null) { return; }
-
-             if(this._callbackStartStopTrackingMap[functionConstruct.nodeId] == null) { this._callbackStartStopTrackingMap[functionConstruct.nodeId] = []; }
-
-             this._currentCallbackStartStopExecutionIdStack.push([]);*/
-        },
-
-        handleCallbackStoppedExecuting: function(functionConstruct)
-        {
-            //debugger;
-        },
 
         markGraph: function(model)
         {
@@ -455,7 +377,7 @@
 
                     continue;
                 }
-                //if(dependencyEdge.index >= 49955 && dependencyEdge.index < 253284) debugger;3
+
                 this._traverseAndMark(dependencyEdge.destinationNode.model, dependencyEdge.index, dependencyConstraintToFollow, dependencyEdge.sourceNode.model, addedDependencies);
             }
 

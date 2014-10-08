@@ -81,7 +81,7 @@
 
         if(!this._isMethodName(propertyName) && !hasBeenHandled)
         {
-            fcModel.DOM_PROPERTIES.DOCUMENT.UNPREDICTED[propertyName] = propertyName;
+            Firecrow.N_Interpreter.DOM_PROPERTIES.DOCUMENT.UNPREDICTED[propertyName] = propertyName;
         }
 
         return this.getPropertyValue(propertyName, codeConstruct);

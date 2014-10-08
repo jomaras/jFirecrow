@@ -11,6 +11,9 @@
 
     <script src="helpers/ValueTypeHelper.js"></script>
 
+    <script src="codeSerializer/CodeMarkupSerializer.js"></script>
+    <script src="codeSerializer/CodeTextSerializer.js"></script>
+
     <script src="dependencyGraph/Edge.js"></script>
     <script src="dependencyGraph/Node.js"></script>
     <script src="dependencyGraph/SlicingCriterion.js"></script>
@@ -49,7 +52,6 @@
 
     <script src="interpreter/DependencyCreator.js"></script>
     <script src="interpreter/VariableObject.js"></script>
-    <script src="interpreter/Evaluator.js"></script>
     <script src="interpreter/ExecutionContextStack.js"></script>
     <script src="interpreter/InternalExecutor.js"></script>
     <script src="interpreter/Interpreter.js"></script>
@@ -58,20 +60,30 @@
     <script src="tests/pureJavaScript/01-simpleVariables.js"></script>
 </head>
 <body>
-    <iframe id="firecrowFrame" height="800" width="1300"></iframe>
+    <table>
+        <tr>
+            <td><textarea id="originalSourceElement" style="width:490px" rows="20"></textarea></td>
+            <td><textarea id="resultSourceElement" style="width:490px" rows="20"></textarea></td>
+        </tr>
+    </table>
+    <iframe id="firecrowFrame" height="800" width="1000"></iframe>
     <script>
         (new Firecrow.RelationshipSetter).traverseHtmlElement(model.htmlElement);
+
+        document.getElementById("originalSourceElement").value = Firecrow.CodeTextGenerator.generateCode(model);
 
         var browser = new Firecrow.Browser(model);
 
         browser.url = model.pageUrl;
 
-        browser.registerSlicingCriteria(Firecrow.N_DependencyGraph.SlicingCriterion.createReadIdentifierCriterion("", "", "a"));
+        browser.registerSlicingCriteria([Firecrow.N_DependencyGraph.SlicingCriterion.createReadIdentifierCriterion("", "", "a")]);
         browser.evaluatePage();
 
         Firecrow.N_DependencyGraph.Graph.sliceUnions = true;
 
         browser.dependencyGraph.markGraph(model.htmlElement);
+
+        document.getElementById("resultSourceElement").value = Firecrow.CodeTextGenerator.generateSlicedCode(model);
     </script>
 </body>
 </html>

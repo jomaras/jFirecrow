@@ -115,10 +115,15 @@ var Firecrow =
             }
         }
     },
-    getDocument: function() {},
-    isDebugMode: true,
+
     getWindow: function() { return frames[0] || window;},
     getDocument: function() { return this.getWindow().document; },
+
+    includeNode: function(node)
+    {
+        node.shouldBeIncluded = true;
+    },
+
     INTERNAL_PROTOTYPE_FUNCTIONS:
     {
         Array:

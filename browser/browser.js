@@ -3,44 +3,33 @@
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
 
-    var Browser;
-    Firecrow.Browser = Browser = function(pageModel)
+    var Browser = Firecrow.Browser = function(pageModel)
     {
-        this.id = Browser.LAST_USED_ID++;
         this.pageModel = pageModel;
+
         this.hostDocument = Firecrow.getDocument();
         this._clearHostDocument();
-        this.htmlWebFile = pageModel;
 
         this.globalObject = new Firecrow.N_Interpreter.GlobalObject(this, this.hostDocument);
         this.dependencyGraph = new Firecrow.N_DependencyGraph.Graph();
-
-        this.domQueriesMap = {};
-        this.dynamicIdMap = {};
-        this.dynamicClassMap = {};
 
         this.cssRules = [];
 
         this.loadingEventsExecuted = false;
 
-        this._matchesSelector = Element.prototype.matchesSelector || Element.prototype.mozMatchesSelector
-                             || Element.prototype.webkitMatchesSelector;
-
-        if(!Firecrow.isDebugMode)
-        {
-            Firecrow.N_DependencyGraph.Node.LAST_ID = 0;
-            Firecrow.N_Interpreter.fcValue.LAST_ID = 0;
-            Firecrow.N_Interpreter.Command.LAST_COMMAND_ID = 0;
-            Firecrow.N_Interpreter.Identifier.LAST_ID = 0;
-            Firecrow.N_Interpreter.Object.LAST_ID = 0;
-        }
+        this._matchesSelector = Element.prototype.matchesSelector || Element.prototype.mozMatchesSelector || Element.prototype.webkitMatchesSelector;
     };
 
     Browser.notifyError = function(message) { debugger; alert("Browser - " + message); };
-    Browser.LAST_USED_ID = 0;
 
     Browser.prototype =
     {
+        _clearHostDocument: function()
+        {
+            this.hostDocument.head.innerHTML = "";
+            this.hostDocument.body.innerHTML = "";
+        },
+
         evaluatePage: function()
         {
             this._buildSubtree(this.pageModel.htmlElement, null);
@@ -141,8 +130,6 @@
 
             var handlerConstruct = eventInfo.handler.codeConstruct;
 
-            this.executionInfo.logEventExecution(eventInfo.thisObjectDescriptor, eventInfo.eventType, handlerConstruct);
-
             this._interpretJsCode
             (
                 handlerConstruct.body,
@@ -158,12 +145,6 @@
             {
                 eventInfo.thisObject.updateToNext();
             }
-        },
-
-        _clearHostDocument: function()
-        {
-            this.hostDocument.head.innerHTML = "";
-            this.hostDocument.body.innerHTML = "";
         },
 
         _buildSubtree: function(htmlModelElement, parentDomElement)
@@ -204,15 +185,11 @@
 
         _isScriptNode: function(htmlModelElement)
         {
-            if(htmlModelElement == null) { return false; }
-
             return  htmlModelElement.type == "script";
         },
 
         _isCssInclusionNode: function(htmlModelElement)
         {
-            if(htmlModelElement == null) { return false; }
-
             return htmlModelElement.type == "style" || this._isExternalStyleLink(htmlModelElement);
         },
 
@@ -247,24 +224,26 @@
         {
             var htmlDomElement = null;
 
-                 if (htmlModelNode.type == null) { return null; }
-            else if (htmlModelNode.type == "html") { htmlDomElement = this.hostDocument.documentElement; }
-            else if (htmlModelNode.type == "head" || htmlModelNode.type == "body") { htmlDomElement = this.hostDocument[htmlModelNode.type]; }
-            else if (htmlModelNode.type == "textNode") { htmlDomElement = this.hostDocument.createTextNode(htmlModelNode.textContent); }
-            else if (this._isExternalStyleLink(htmlModelNode)) { htmlDomElement = this.hostDocument.createElement("style"); }
-            else
+            switch(htmlModelNode.type)
             {
-                htmlDomElement = this.hostDocument.createElement(htmlModelNode.type);
+                case "html":
+                    htmlDomElement = this.hostDocument.documentElement;
+                    break;
+                case "head":
+                case "body":
+                    htmlDomElement = this.hostDocument[htmlModelNode.type];
+                    break;
+                case "textNode":
+                    htmlDomElement = this.hostDocument.createTextNode(htmlModelNode.textContent);
+                    break;
+                default:
+                    htmlDomElement = this._isExternalStyleLink(htmlModelNode) ? this.hostDocument.createElement("style")
+                                                                              : this.hostDocument.createElement(htmlModelNode.type);
             }
 
             htmlDomElement.modelElement = htmlModelNode;
 
-            if(Browser.isForSlicing)
-            {
-                htmlModelNode.domElement = htmlDomElement;
-            }
-
-            this.dependencyGraph.handleNodeCreated(htmlModelNode, "html", false);
+            this.dependencyGraph.createHtmlNode(htmlModelNode);
 
             return htmlDomElement;
         },
@@ -286,17 +265,16 @@
 
         generateEvalCommands: function(callExpression, codeModel)
         {
-            if(!this.interpreter) { return; }
-
             var that = this;
 
             ASTHelper.traverseAst(codeModel, function(currentNode, nodeName, parentNode)
             {
-                that.dependencyGraph.handleNodeCreated(currentNode, "js", false);
-                that.dependencyGraph.handleNodeInserted(currentNode, ASTHelper.isProgram(parentNode) ? callExpression : parentNode);
+                that.dependencyGraph.createDynamicJsNode(currentNode);
+                that.dependencyGraph.insertNode(currentNode, ASTHelper.isProgram(parentNode) ? callExpression : parentNode);
             });
 
             this.interpreter.generateEvalCommands(callExpression, codeModel);
+
             if(callExpression.arguments != null && callExpression.arguments[0] != null)
             {
                 this.globalObject.dependencyCreator.createDataDependency(callExpression.arguments[0], callExpression, this.globalObject.getPreciseEvaluationPositionId());
@@ -310,31 +288,12 @@
             this.globalObject.dependencyCreator = new Firecrow.N_Interpreter.DependencyCreator(this.globalObject, this.interpreter.executionContextStack);
 
             this.interpreter.runSync();
+
             this.interpreter.destruct();
             delete this.interpreter;
             this.interpreter = null;
 
             this.globalObject.registerPreRegisteredAjaxEvents();
-        },
-
-        logStartExecutingCallbacks: function(codeConstruct)
-        {
-            this.dependencyGraph.handleCallbackStartedExecuting(codeConstruct);
-        },
-
-        logEndExecutingCallbacks: function(codeConstruct)
-        {
-            this.dependencyGraph.handleCallbackStoppedExecuting(codeConstruct);
-        },
-
-        logEnteringFunction: function(callExpression, functionConstruct, executionContextId)
-        {
-            this.dependencyGraph.handleEnterFunction(callExpression, functionConstruct, executionContextId);
-        },
-
-        logExitingFunction: function()
-        {
-            this.dependencyGraph.handleExitFunction();
         },
 
         _insertIntoDom: function(htmlDomElement, parentDomElement)
@@ -356,7 +315,7 @@
             parentDomElement == null ? this.hostDocument.appendChild(htmlDomElement)
                                      : parentDomElement.appendChild(htmlDomElement);
 
-            this.dependencyGraph.handleNodeInserted(htmlDomElement.modelElement, parentDomElement != null ? parentDomElement.modelElement : null);
+            this.dependencyGraph.insertNode(htmlDomElement.modelElement, parentDomElement != null ? parentDomElement.modelElement : null);
         },
 
         _buildCssNodes: function(cssHtmlElementModelNode)
@@ -373,8 +332,8 @@
                 cssText += cssRule.cssText;
                 this.cssRules.push(cssRule);
 
-                this.dependencyGraph.handleNodeCreated(cssRule, "css", false);
-                this.dependencyGraph.handleNodeInserted(cssRule, cssHtmlElementModelNode);
+                this.dependencyGraph.createCssNode(cssRule);
+                this.dependencyGraph.insertNode(cssRule, cssHtmlElementModelNode);
             }
 
             if(this._isExternalStyleLink(cssHtmlElementModelNode))
@@ -398,7 +357,7 @@
 
                 if(this.matchesSelector(htmlModelNode.domElement, cssRule.selector))
                 {
-                    this.dependencyGraph.handleDataDependencyEstablished(htmlModelNode, cssRule, this.globalObject.getPreciseEvaluationPositionId(), null, null, true);
+                    this.dependencyGraph.createDependency(htmlModelNode, cssRule, this.globalObject.getPreciseEvaluationPositionId(), null, null, true);
                 }
             }
         },
@@ -428,10 +387,11 @@
         _buildJavaScriptNodes: function(scriptHtmlElementModelNode)
         {
             var that = this;
+
             ASTHelper.traverseAst(scriptHtmlElementModelNode.pathAndModel.model, function(currentNode, nodeName, parentNode)
             {
-                that.dependencyGraph.handleNodeCreated(currentNode, "js", false);
-                that.dependencyGraph.handleNodeInserted(currentNode, ASTHelper.isProgram(parentNode) ? scriptHtmlElementModelNode : parentNode);
+                that.dependencyGraph.createJsNode(currentNode);
+                that.dependencyGraph.insertNode(currentNode, ASTHelper.isProgram(parentNode) ? scriptHtmlElementModelNode : parentNode);
             });
         },
 
@@ -461,11 +421,9 @@
 
         _handleEvents: function()
         {
-            console.log("Started handling events");
-
             if(this.pageModel.eventTraces == null) { return; }
 
-            this.globalObject.document.addProperty("readyState", new fcModel.fcValue("complete", null, null));
+            this.globalObject.document.addProperty("readyState", new Firecrow.N_Interpreter.fcValue("complete", null, null));
 
             var eventTraces = this.pageModel.eventTraces;
 
@@ -479,8 +437,9 @@
             for(var i = 0, length = eventTraces.length; i < length; i++)
             {
                 var eventTrace = eventTraces[i];
+
                 this._adjustCurrentInputStates(eventTrace.args.currentInputStates);
-                var eventFile = eventTrace.filePath;
+
                 this.globalObject.currentEventTime = eventTrace.currentTime;
 
                 if(eventTrace.args.type == "focus") continue;
@@ -637,7 +596,7 @@
 
             if(eventTrace.args != null && eventTrace.args.type == "readystatechange")
             {
-                targetElement = this.globalObject.document.implementationObject;;
+                targetElement = this.globalObject.document.implementationObject;
                 thisElement = this.globalObject.document.implementationObject;
             }
 
@@ -728,46 +687,20 @@
             }
         },
 
-        callDataDependencyEstablishedCallbacks: function(sourceNode, targetNode, dependencyCreationInfo, destinationNodeDependencyInfo, shouldNotFollowDependencies, isValueDependency)
+        createDependency: function(sourceNode, targetNode, dependencyCreationInfo, destinationNodeDependencyInfo, shouldNotFollowDependencies, isValueDependency)
         {
             if(sourceNode == null || targetNode == null) { return; }
 
-            this.dependencyGraph.handleDataDependencyEstablished
+            this.dependencyGraph.createDependency
             (
                 sourceNode, targetNode, dependencyCreationInfo,
                 destinationNodeDependencyInfo, shouldNotFollowDependencies, isValueDependency
             );
         },
 
-        logDomQueried: function(methodName, selector, codeConstruct)
+        logImportantConstructEvaluated: function(node)
         {
-            if(this.domQueriesMap[codeConstruct.nodeId] == null)
-            {
-                this.domQueriesMap[codeConstruct.nodeId] = { methodName: methodName, selectorsMap: {}, codeConstruct: codeConstruct};
-            }
-
-            this.domQueriesMap[codeConstruct.nodeId].selectorsMap[selector] = true;
-        },
-
-        logDynamicId: function(idValue, codeConstructId, nodeId)
-        {
-            if(this.dynamicIdMap[idValue] == null) { this.dynamicIdMap[idValue] = { value: idValue, codeConstructIdMap: {}, nodeIdMap: {}}; }
-
-            this.dynamicIdMap[idValue].codeConstructIdMap[codeConstructId] = 1;
-            this.dynamicIdMap[idValue].nodeIdMap[nodeId] = 1;
-        },
-
-        logDynamicClass: function(classValue, codeConstructId, nodeId)
-        {
-            if(this.dynamicClassMap[classValue] == null) { this.dynamicClassMap[classValue] = { value: classValue, codeConstructIdMap: {}, nodeIdMap: {}}; }
-
-            this.dynamicClassMap[classValue].codeConstructIdMap[codeConstructId] = 1;
-            this.dynamicClassMap[classValue].nodeIdMap[nodeId] = 1;
-        },
-
-        _getDocumentObject: function()
-        {
-            return Firecrow.isDebugMode ? document : Firecrow.fbHelper._getCurrentPageDocument();
+            this.dependencyGraph.logImportantConstructEvaluated(node);
         },
 
         registerSlicingCriteria: function(slicingCriteria)
@@ -799,7 +732,6 @@
         {
             if(xPath == "window" || xPath == "") { return this.globalObject; }
             if(xPath == "document") { return this.globalObject.document.implementationObject; }
-
 
             return this.globalObject.document.implementationObject.evaluate
             (
@@ -873,18 +805,12 @@
             this.hostDocument = null;
             delete this.hostDocument;
 
-            delete this.htmlWebFile;
-
             this.globalObject.destruct();
             delete this.globalObject;
-
-            delete this.domQueriesMap;
 
             delete this.cssRules;
         },
 
         notifyError: function(message) { Browser.notifyError(message); }
     };
-
-    Browser.isForSlicing = true;
 })();

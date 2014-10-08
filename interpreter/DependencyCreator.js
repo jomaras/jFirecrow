@@ -17,7 +17,7 @@
         {
             if(constructorFunction.iValue != null && constructorFunction.iValue.prototypeDefinitionConstruct != null)
             {
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks
+                this.globalObject.browser.createDependency
                 (
                     creationCodeConstruct,
                     constructorFunction.iValue.prototypeDefinitionConstruct.codeConstruct,
@@ -34,7 +34,7 @@
             dependencyCreationInfo.shouldAlwaysBeFollowed = true;
             dependencyCreationInfo.isBreakReturnDependency = true;
 
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks
+            this.globalObject.browser.createDependency
             (
                 ASTHelper.getBreakContinueReturnImportantAncestor(breakContinueConstruct),
                 breakContinueConstruct,
@@ -73,7 +73,7 @@
 
         createDataDependency: function(fromConstruct, toConstruct, evaluationPosition, toEvaluationPosition)
         {
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks
+            this.globalObject.browser.createDependency
             (
                 fromConstruct,
                 toConstruct,
@@ -84,7 +84,7 @@
 
         createValueDataDependency: function(fromConstruct, toConstruct, evaluationPosition, toEvaluationPosition)
         {
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks
+            this.globalObject.browser.createDependency
             (
                 fromConstruct,
                 toConstruct,
@@ -130,7 +130,7 @@
 
             for(var i = 0; i < args.length; i++)
             {
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks(args[i], callCommand.codeConstruct, evaluationPosition);
+                this.globalObject.browser.createDependency(args[i], callCommand.codeConstruct, evaluationPosition);
             }
         },
 
@@ -160,10 +160,10 @@
 
                 if(arrayItem != null && arrayItem.lastModificationPosition != null)
                 {
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks(formalParameter, arrayItem.lastModificationPosition.codeConstruct, evalPosition);
+                    this.globalObject.browser.createDependency(formalParameter, arrayItem.lastModificationPosition.codeConstruct, evalPosition);
                 }
 
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks(formalParameter, callCommand.codeConstruct, evalPosition);
+                this.globalObject.browser.createDependency(formalParameter, callCommand.codeConstruct, evalPosition);
             }
         },
 
@@ -175,8 +175,8 @@
             {
                 var formalParameter = formalParams[i].value.codeConstruct;
 
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks(formalParameter, args[i + 1], evalPosition);
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks(formalParameter, callCommand.codeConstruct, evalPosition);
+                this.globalObject.browser.createDependency(formalParameter, args[i + 1], evalPosition);
+                this.globalObject.browser.createDependency(formalParameter, callCommand.codeConstruct, evalPosition);
             }
         },
 
@@ -188,52 +188,8 @@
             {
                 var formalParam = formalParams[i].value.codeConstruct;
 
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks(formalParam, args[i], evalPosition);
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks(formalParam, callCommand.codeConstruct, evalPosition);
-            }
-        },
-
-
-        addDependenciesToPreviouslyExecutedBlockConstructs: function(codeConstruct, previouslyExecutedBlockConstructs)
-        {
-            var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
-            evaluationPosition.isReturnDependency = true;
-
-            for(var i = 0, length = previouslyExecutedBlockConstructs.length; i < length; i++)
-            {
-                var mapping = previouslyExecutedBlockConstructs[i];
-
-                this.globalObject.browser.callControlDependencyEstablishedCallbacks
-                (
-                    codeConstruct,
-                    mapping.codeConstruct,
-                    evaluationPosition,
-                    mapping.evaluationPositionId,
-                    true
-                );
-            }
-        },
-
-        addDependenciesToTopBlockConstructs: function(currentConstruct)
-        {
-            var topBlockConstructs = this.executionContextStack.getTopBlockCommandConstructs();
-            var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
-
-            for(var i = 0, length = topBlockConstructs.length; i < length; i++)
-            {
-                var topBlockConstruct = topBlockConstructs[i];
-                this.globalObject.browser.callControlDependencyEstablishedCallbacks(currentConstruct, topBlockConstruct, evaluationPosition);
-            }
-
-            if(this.executionContextStack.handlerInfo != null)
-            {
-                this.globalObject.browser.callControlDependencyEstablishedCallbacks
-                (
-                    currentConstruct,
-                    this.executionContextStack.handlerInfo.registrationPoint.codeConstruct,
-                    evaluationPosition,
-                    this.executionContextStack.handlerInfo.registrationPoint.evaluationPositionId
-                );
+                this.globalObject.browser.createDependency(formalParam, args[i], evalPosition);
+                this.globalObject.browser.createDependency(formalParam, callCommand.codeConstruct, evalPosition);
             }
         },
 
@@ -246,8 +202,6 @@
             {
                 this.globalObject.dependencyCreator.createDataDependency(newExpression, newExpression.arguments[i], evaluationPosition);
             }
-
-            this.addDependenciesToTopBlockConstructs(newExpression);
         },
 
         addCallExpressionDependencies: function(callConstruct)
@@ -267,8 +221,6 @@
                     this.globalObject.dependencyCreator.createDataDependency(callConstruct, callConstruct.arguments[i], evaluationPosition);
                 }
             }
-
-            this.addDependenciesToTopBlockConstructs(callConstruct);
         },
 
         _createFormalParameterDependenciesInCallback: function(callCommand, formalParameters, args)
@@ -282,20 +234,20 @@
 
                 if(arg != null)
                 {
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks(params[i], arg.codeConstruct, evalPosition);
+                    this.globalObject.browser.createDependency(params[i], arg.codeConstruct, evalPosition);
                 }
 
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks(params[i], callCommand.codeConstruct, evalPosition);
+                this.globalObject.browser.createDependency(params[i], callCommand.codeConstruct, evalPosition);
                 if(callCommand.parentInitCallbackCommand != null)
                 {
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks(params[i], callCommand.parentInitCallbackCommand.codeConstruct, evalPosition);
+                    this.globalObject.browser.createDependency(params[i], callCommand.parentInitCallbackCommand.codeConstruct, evalPosition);
                 }
             }
         },
 
         addCallbackDependencies: function(callbackConstruct, callCallbackConstruct)
         {
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks
+            this.globalObject.browser.createDependency
             (
                 callbackConstruct,
                 callCallbackConstruct,
@@ -311,10 +263,8 @@
 
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
 
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks(assignmentExpression, assignmentCommand.leftSide, evaluationPosition);
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks(assignmentExpression, assignmentCommand.rightSide, evaluationPosition);
-
-            this.addDependenciesToTopBlockConstructs(assignmentExpression);
+            this.globalObject.browser.createDependency(assignmentExpression, assignmentCommand.leftSide, evaluationPosition);
+            this.globalObject.browser.createDependency(assignmentExpression, assignmentCommand.rightSide, evaluationPosition);
         },
 
         _createAssignmentSimpleDependencies: function(assignmentCommand)
@@ -327,8 +277,7 @@
 
         createUpdateExpressionDependencies: function(updateExpression)
         {
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks(updateExpression, updateExpression.argument, this.globalObject.getPreciseEvaluationPositionId());
-            this.addDependenciesToTopBlockConstructs(updateExpression);
+            this.globalObject.browser.createDependency(updateExpression, updateExpression.argument, this.globalObject.getPreciseEvaluationPositionId());
         },
 
         createIdentifierDependencies:function(identifier, identifierConstruct, evaluationPosition)
@@ -355,7 +304,7 @@
         {
             if(identifier.lastModificationPosition == null) { return; }
 
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks
+            this.globalObject.browser.createDependency
             (
                 identifierConstruct,
                 identifier.lastModificationPosition.codeConstruct,
@@ -365,7 +314,7 @@
                 true
             );
 
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks
+            this.globalObject.browser.createDependency
             (
                 identifierConstruct,
                 identifier.value.codeConstruct,
@@ -380,7 +329,7 @@
         {
             if(identifier.declarationPosition == null || identifier.declarationPosition == identifier.lastModificationPosition) { return; }
 
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks
+            this.globalObject.browser.createDependency
             (
                 identifierConstruct,
                 ASTHelper.isVariableDeclarator(identifier.declarationPosition.codeConstruct) ? identifier.declarationPosition.codeConstruct.id
@@ -395,8 +344,8 @@
         {
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
 
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks(binaryExpression, binaryExpression.left, evaluationPosition);
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks(binaryExpression, binaryExpression.right, evaluationPosition);
+            this.globalObject.browser.createDependency(binaryExpression, binaryExpression.left, evaluationPosition);
+            this.globalObject.browser.createDependency(binaryExpression, binaryExpression.right, evaluationPosition);
         },
 
         createBinaryExpressionInDependencies: function(binaryExpression, objectFcValue, propertyNameFcValue)
@@ -415,7 +364,7 @@
             {
                 if(fcProperty.lastModificationPosition != null)
                 {
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks
+                    this.globalObject.browser.createDependency
                     (
                         binaryExpression,
                         fcProperty.lastModificationPosition.codeConstruct,
@@ -427,7 +376,7 @@
                 }
                 else  if(fcProperty.declarationPosition != null)
                 {
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks
+                    this.globalObject.browser.createDependency
                     (
                         binaryExpression,
                         fcProperty.declarationPosition.codeConstruct,
@@ -445,7 +394,7 @@
 
                 if(propertyDeletePosition != null)
                 {
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks(binaryExpression, propertyDeletePosition.codeConstruct, evaluationPosition, propertyDeletePosition.evaluationPosition);
+                    this.globalObject.browser.createDependency(binaryExpression, propertyDeletePosition.codeConstruct, evaluationPosition, propertyDeletePosition.evaluationPosition);
                 }
             }
         },
@@ -454,11 +403,9 @@
         {
             this.globalObject.browser.callControlDependencyEstablishedCallbacks(returnCommand.codeConstruct, returnCommand.codeConstruct.argument, this.globalObject.getPreciseEvaluationPositionId());
 
-            this.addDependenciesToTopBlockConstructs(returnCommand.codeConstruct);
-
             if(returnCommand.parentFunctionCommand == null || returnCommand.parentFunctionCommand.isExecuteCallbackCommand()) { return; }
 
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks(returnCommand.parentFunctionCommand.codeConstruct, returnCommand.codeConstruct, this.globalObject.getReturnExpressionPreciseEvaluationPositionId());
+            this.globalObject.browser.createDependency(returnCommand.parentFunctionCommand.codeConstruct, returnCommand.codeConstruct, this.globalObject.getReturnExpressionPreciseEvaluationPositionId());
         },
 
         createMemberExpressionDependencies: function(object, property, propertyValue, memberExpression)
@@ -475,7 +422,7 @@
                 {
                     if(fcProperty.lastModificationPosition != null)
                     {
-                        this.globalObject.browser.callDataDependencyEstablishedCallbacks
+                        this.globalObject.browser.createDependency
                         (
                             memberExpression,
                             fcProperty.lastModificationPosition.codeConstruct,
@@ -487,7 +434,7 @@
                     }
                     else  if(fcProperty.declarationPosition != null)
                     {
-                        this.globalObject.browser.callDataDependencyEstablishedCallbacks
+                        this.globalObject.browser.createDependency
                         (
                             memberExpression.property,
                             fcProperty.declarationPosition.codeConstruct,
@@ -500,12 +447,12 @@
                 }
             }
 
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks(memberExpression, memberExpression.object, this.globalObject.getPreciseEvaluationPositionId());
+            this.globalObject.browser.createDependency(memberExpression, memberExpression.object, this.globalObject.getPreciseEvaluationPositionId());
 
             //Create a dependency only if the property exists, the problem is that if we don't ignore it here, that will lead to links to constructs where the property was not null
             if(propertyExists || !ASTHelper.isIdentifier(memberExpression.property) || ASTHelper.isLastPropertyInLeftHandAssignment(memberExpression.property))
             {
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks(memberExpression, memberExpression.property, evaluationPosition);
+                this.globalObject.browser.createDependency(memberExpression, memberExpression.property, evaluationPosition);
             }
             else
             {
@@ -513,17 +460,17 @@
 
                 if(propertyDeletePosition != null)
                 {
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks(memberExpression, propertyDeletePosition.codeConstruct, evaluationPosition, propertyDeletePosition.evaluationPosition, null, true);
+                    this.globalObject.browser.createDependency(memberExpression, propertyDeletePosition.codeConstruct, evaluationPosition, propertyDeletePosition.evaluationPosition, null, true);
                 }
 
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks(memberExpression, memberExpression.property, evaluationPosition, evaluationPosition, true);
+                this.globalObject.browser.createDependency(memberExpression, memberExpression.property, evaluationPosition, evaluationPosition, true);
 
                 if(memberExpression.computed && ASTHelper.isIdentifier(memberExpression.property))
                 {
                     var identifier = this.executionContextStack.getIdentifier(memberExpression.property.name);
                     if(identifier != null && identifier.declarationPosition != null)
                     {
-                        this.globalObject.browser.callDataDependencyEstablishedCallbacks(memberExpression, identifier.declarationPosition.codeConstruct, evaluationPosition, identifier.declarationPosition.evaluationPositionId, true);
+                        this.globalObject.browser.createDependency(memberExpression, identifier.declarationPosition.codeConstruct, evaluationPosition, identifier.declarationPosition.evaluationPositionId, true);
                     }
                 }
             }
@@ -532,9 +479,9 @@
         createDependenciesInForInWhereCommand: function(forInWhereConstruct, whereObject, nextPropertyName, isFirstIteration)
         {
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
-            this.addDependenciesToTopBlockConstructs(forInWhereConstruct.left);
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks(forInWhereConstruct, forInWhereConstruct.right, evaluationPosition);
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks(forInWhereConstruct.left, forInWhereConstruct.right, evaluationPosition);
+
+            this.globalObject.browser.createDependency(forInWhereConstruct, forInWhereConstruct.right, evaluationPosition);
+            this.globalObject.browser.createDependency(forInWhereConstruct.left, forInWhereConstruct.right, evaluationPosition);
 
             if(!nextPropertyName || !nextPropertyName.jsValue) { return; }
 
@@ -542,7 +489,7 @@
 
             if(property != null && property.lastModificationPosition != null)
             {
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks
+                this.globalObject.browser.createDependency
                 (
                     forInWhereConstruct.left,
                     property.lastModificationPosition.codeConstruct,
@@ -554,7 +501,7 @@
                 {
                     var declarator = forInWhereConstruct.left.declarations[0];
 
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks
+                    this.globalObject.browser.createDependency
                     (
                         declarator.id,
                         property.lastModificationPosition.codeConstruct,
@@ -562,13 +509,13 @@
                         property.lastModificationPosition.evaluationPositionId
                     );
 
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks(declarator, forInWhereConstruct.right, evaluationPosition);
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks(declarator.id, forInWhereConstruct.right, evaluationPosition);
+                    this.globalObject.browser.createDependency(declarator, forInWhereConstruct.right, evaluationPosition);
+                    this.globalObject.browser.createDependency(declarator.id, forInWhereConstruct.right, evaluationPosition);
                 }
 
                 if(isFirstIteration)
                 {
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks
+                    this.globalObject.browser.createDependency
                     (
                         forInWhereConstruct.right,
                         property.lastModificationPosition.codeConstruct,
@@ -583,8 +530,8 @@
         {
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
 
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks(conditionalCommand.codeConstruct, conditionalCommand.codeConstruct.test, evaluationPosition);
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks(conditionalCommand.codeConstruct, conditionalCommand.startCommand.body, evaluationPosition);
+            this.globalObject.browser.createDependency(conditionalCommand.codeConstruct, conditionalCommand.codeConstruct.test, evaluationPosition);
+            this.globalObject.browser.createDependency(conditionalCommand.codeConstruct, conditionalCommand.startCommand.body, evaluationPosition);
         },
 
         createDependenciesForLogicalExpressionItemCommand: function(logicalExpression)
@@ -593,7 +540,7 @@
             //if(logicalExpression.operator == "&&")
             {
                 //So that the dependecies fall into the expression inside the logical expression item
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks
+                this.globalObject.browser.createDependency
                 (
                     logicalExpression.right,
                     logicalExpression.left,
@@ -611,7 +558,7 @@
             {
                 var executedLogicalExpressionItemConstruct = executedItemsCommands[i].codeConstruct;
 
-                this.globalObject.browser.callDataDependencyEstablishedCallbacks
+                this.globalObject.browser.createDependency
                 (
                     logicalExpressionCommand.codeConstruct,
                     executedLogicalExpressionItemConstruct,
@@ -631,7 +578,7 @@
             var args = callExpression.arguments;
             var evaluationPosition = this.globalObject.getPreciseEvaluationPositionId();
 
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks(callExpression, callExpression.callee, evaluationPosition);
+            this.globalObject.browser.createDependency(callExpression, callExpression.callee, evaluationPosition);
 
             if(callInternalFunctionCommand.isCall || callInternalFunctionCommand.isApply)
             {
@@ -643,7 +590,7 @@
 
                 for(var i = 0, length = args.length; i < length; i++)
                 {
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks(callExpression, args[i], evaluationPosition);
+                    this.globalObject.browser.createDependency(callExpression, args[i], evaluationPosition);
                 }
             }
         },
@@ -656,7 +603,7 @@
             {
                 for(var i = 1, length = arguments.length; i < length; i++)
                 {
-                    this.globalObject.browser.callDataDependencyEstablishedCallbacks(callExpression, args[i], evaluationPosition);
+                    this.globalObject.browser.createDependency(callExpression, args[i], evaluationPosition);
                 }
             }
             else
@@ -672,7 +619,7 @@
 
         createSequenceExpressionDependencies: function(sequenceExpression, lastExpression)
         {
-            this.globalObject.browser.callDataDependencyEstablishedCallbacks
+            this.globalObject.browser.createDependency
             (
                 sequenceExpression,
                 lastExpression,
