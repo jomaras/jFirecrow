@@ -58,67 +58,33 @@
     <script src="interpreter/Interpreter.js"></script>
 
     <script src="browser/browser.js"></script>
+    <script src="tests/pureJavaScript/01-simpleVariables.js"></script>
 </head>
 <body>
-    <table>
-        <tr>
-            <td>
-                <textarea id="originalSourceElement" style="width:490px" rows="20"><!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8"/>
-    <title></title>
-</head>
-<body>
+<table>
+    <tr>
+        <td><textarea id="originalSourceElement" style="width:490px" rows="20"></textarea></td>
+        <td><textarea id="resultSourceElement" style="width:490px" rows="20"></textarea></td>
+    </tr>
+</table>
+<iframe id="firecrowFrame" height="800" width="1000"></iframe>
 <script>
-    var a = 3, b = 4;
-    a++;
-    b++;
-    a = a + 1;
-    a;
+    (new Firecrow.RelationshipSetter).traverseHtmlElement(model.htmlElement);
+
+    document.getElementById("originalSourceElement").value = Firecrow.CodeTextSerializer.generateCode(model);
+
+    var browser = new Firecrow.Browser(model);
+
+    browser.url = model.pageUrl;
+
+    browser.registerSlicingCriteria([Firecrow.N_DependencyGraph.SlicingCriterion.createReadIdentifierCriterion("", "", "a")]);
+    browser.evaluatePage();
+
+    Firecrow.N_DependencyGraph.Graph.sliceUnions = true;
+
+    browser.dependencyGraph.markGraph(model.htmlElement);
+
+    document.getElementById("resultSourceElement").value = Firecrow.CodeTextSerializer.generateSlicedCode(model);
 </script>
-
-</body>
-</html></textarea>
-            </td>
-            <td><textarea id="resultSourceElement" style="width:490px" rows="20"></textarea></td>
-        </tr>
-    </table>
-    <button id="sliceButton">Slice Button</button><br/>
-    <iframe id="firecrowFrame" height="800" width="1000"></iframe>
-    <script>
-        function slice()
-        {
-            var sourceCode = document.getElementById("originalSourceElement").value.trim();
-
-            if(sourceCode.trim() == "") { return; }
-
-            var model = Firecrow.HTMLParser.parse(sourceCode);
-
-            (new Firecrow.RelationshipSetter).traverseHtmlElement(model.htmlElement);
-
-            document.getElementById("originalSourceElement").value = Firecrow.CodeTextSerializer.generateCode(model);
-
-            var browser = new Firecrow.Browser(model);
-
-            browser.url = model.pageUrl;
-
-            browser.registerSlicingCriteria([Firecrow.N_DependencyGraph.SlicingCriterion.createReadIdentifierCriterion("", "", "a")]);
-            browser.evaluatePage();
-
-            Firecrow.N_DependencyGraph.Graph.sliceUnions = true;
-
-            browser.dependencyGraph.markGraph(model.htmlElement);
-
-            document.getElementById("resultSourceElement").value = Firecrow.CodeTextSerializer.generateSlicedCode(model);
-        };
-
-        slice();
-
-        document.getElementById("sliceButton").onclick = function()
-        {
-            slice();
-        };
-    </script>
 </body>
 </html>

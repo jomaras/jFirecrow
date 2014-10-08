@@ -59,6 +59,8 @@
 }(this, function (exports) {
     'use strict';
 
+    var lineOffset = 0; //Firecrow
+
     var Token,
         TokenName,
         FnExprTokens,
@@ -1423,7 +1425,7 @@
     }
 
     function Position() {
-        this.line = lineNumber;
+        this.line = lineNumber + lineOffset; //Firecrow
         this.column = index - lineStart;
     }
 
@@ -3815,6 +3817,7 @@
 
         extra.range = (typeof options.range === 'boolean') && options.range;
         extra.loc = (typeof options.loc === 'boolean') && options.loc;
+        lineOffset = extra.lineOffset = options.lineOffset || 0; //Firecrow
 
         if (typeof options.comment === 'boolean' && options.comment) {
             extra.comments = [];
@@ -3889,6 +3892,7 @@
         if (typeof options !== 'undefined') {
             extra.range = (typeof options.range === 'boolean') && options.range;
             extra.loc = (typeof options.loc === 'boolean') && options.loc;
+            lineOffset = extra.lineOffset = options.lineOffset || 0; //Firecrow
             extra.attachComment = (typeof options.attachComment === 'boolean') && options.attachComment;
 
             if (extra.loc && options.source !== null && options.source !== undefined) {
