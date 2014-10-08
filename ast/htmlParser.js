@@ -1060,20 +1060,20 @@
             return node;
         },
 
-        _convertAttributes: function(attributes)
+        _convertAttributes: function(attributesObject)
         {
             if(attributes == null) { return []; }
 
             var attributes = [];
 
-            for(var propName in attributes)
+            for(var propName in attributesObject)
             {
-                if(!attributes.hasOwnProperty(propName)) { continue; }
+                if(!attributesObject.hasOwnProperty(propName)) { continue; }
 
                 attributes.push
                 ({
                     name: propName,
-                    value: attributes[propName]
+                    value: attributesObject[propName]
                 });
             }
 

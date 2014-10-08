@@ -13,6 +13,7 @@
         {
             if(htmlElement == null) debugger;
             if(htmlElement.shouldBeIncluded) { return true; }
+            if(htmlElement.type == "meta" || htmlElement.type == "head" || htmlElement.type == "title") { return true; }
 
             if(htmlElement.type == "script")
             {

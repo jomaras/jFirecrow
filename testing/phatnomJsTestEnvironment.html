@@ -1,90 +1,109 @@
 <!DOCTYPE html>
 <html>
-<head lang="en">
+<head>
     <meta charset="UTF-8">
     <title></title>
-    <script src="Firecrow.js"></script>
 
-    <script src="ast/ASTHelper.js"></script>
-    <script src="ast/RelationshipSetter.js"></script>
-    <script src="ast/esprima.js"></script>
-    <script src="ast/htmlParser.js"></script>
+    <script src="../Firecrow.js"></script>
 
-    <script src="helpers/ValueTypeHelper.js"></script>
+    <script src="../ast/ASTHelper.js"></script>
+    <script src="../ast/RelationshipSetter.js"></script>
+    <script src="../ast/esprima.js"></script>
+    <script src="../ast/htmlParser.js"></script>
 
-    <script src="codeSerializer/CodeMarkupSerializer.js"></script>
-    <script src="codeSerializer/CodeTextSerializer.js"></script>
+    <script src="../helpers/ValueTypeHelper.js"></script>
 
-    <script src="dependencyGraph/Edge.js"></script>
-    <script src="dependencyGraph/Node.js"></script>
-    <script src="dependencyGraph/SlicingCriterion.js"></script>
-    <script src="dependencyGraph/Graph.js"></script>
-    <script src="dependencyGraph/InclusionFinder.js"></script>
-    <script src="dependencyGraph/DependencyPostprocessor.js"></script>
+    <script src="../codeSerializer/CodeMarkupSerializer.js"></script>
+    <script src="../codeSerializer/CodeTextSerializer.js"></script>
 
-    <script src="interpreter/commands/Command.js"></script>
-    <script src="interpreter/commands/CommandGenerator.js"></script>
+    <script src="../dependencyGraph/Edge.js"></script>
+    <script src="../dependencyGraph/Node.js"></script>
+    <script src="../dependencyGraph/SlicingCriterion.js"></script>
+    <script src="../dependencyGraph/Graph.js"></script>
+    <script src="../dependencyGraph/InclusionFinder.js"></script>
+    <script src="../dependencyGraph/DependencyPostprocessor.js"></script>
 
-    <script src="interpreter/internals/FcValue.js"></script>
-    <script src="interpreter/internals/Object.js"></script>
-    <script src="interpreter/internals/Function.js"></script>
-    <script src="interpreter/internals/Identifier.js"></script>
-    <script src="interpreter/internals/GlobalObject.js"></script>
-    <script src="interpreter/internals/Array.js"></script>
-    <script src="interpreter/internals/Boolean.js"></script>
-    <script src="interpreter/internals/Date.js"></script>
-    <script src="interpreter/internals/Error.js"></script>
-    <script src="interpreter/internals/Math.js"></script>
-    <script src="interpreter/internals/Number.js"></script>
-    <script src="interpreter/internals/RegEx.js"></script>
-    <script src="interpreter/internals/String.js"></script>
-    <script src="interpreter/internals/XMLHttpRequest.js"></script>
+    <script src="../interpreter/commands/Command.js"></script>
+    <script src="../interpreter/commands/CommandGenerator.js"></script>
 
-    <script src="interpreter/internals/DOM/Attribute.js"></script>
-    <script src="interpreter/internals/DOM/Canvas.js"></script>
-    <script src="interpreter/internals/DOM/ClassList.js"></script>
-    <script src="interpreter/internals/DOM/CSSStyleDeclaration.js"></script>
-    <script src="interpreter/internals/DOM/Element.js"></script>
-    <script src="interpreter/internals/DOM/Event.js"></script>
-    <script src="interpreter/internals/DOM/HTMLElement.js"></script>
-    <script src="interpreter/internals/DOM/HTMLImageElement.js"></script>
-    <script src="interpreter/internals/DOM/Image.js"></script>
-    <script src="interpreter/internals/DOM/Document.js"></script>
+    <script src="../interpreter/internals/FcValue.js"></script>
+    <script src="../interpreter/internals/Object.js"></script>
+    <script src="../interpreter/internals/Function.js"></script>
+    <script src="../interpreter/internals/Identifier.js"></script>
+    <script src="../interpreter/internals/GlobalObject.js"></script>
+    <script src="../interpreter/internals/Array.js"></script>
+    <script src="../interpreter/internals/Boolean.js"></script>
+    <script src="../interpreter/internals/Date.js"></script>
+    <script src="../interpreter/internals/Error.js"></script>
+    <script src="../interpreter/internals/Math.js"></script>
+    <script src="../interpreter/internals/Number.js"></script>
+    <script src="../interpreter/internals/RegEx.js"></script>
+    <script src="../interpreter/internals/String.js"></script>
+    <script src="../interpreter/internals/XMLHttpRequest.js"></script>
 
-    <script src="interpreter/DependencyCreator.js"></script>
-    <script src="interpreter/VariableObject.js"></script>
-    <script src="interpreter/ExecutionContextStack.js"></script>
-    <script src="interpreter/InternalExecutor.js"></script>
-    <script src="interpreter/Interpreter.js"></script>
+    <script src="../interpreter/internals/DOM/Attribute.js"></script>
+    <script src="../interpreter/internals/DOM/Canvas.js"></script>
+    <script src="../interpreter/internals/DOM/ClassList.js"></script>
+    <script src="../interpreter/internals/DOM/CSSStyleDeclaration.js"></script>
+    <script src="../interpreter/internals/DOM/Element.js"></script>
+    <script src="../interpreter/internals/DOM/Event.js"></script>
+    <script src="../interpreter/internals/DOM/HTMLElement.js"></script>
+    <script src="../interpreter/internals/DOM/HTMLImageElement.js"></script>
+    <script src="../interpreter/internals/DOM/Image.js"></script>
+    <script src="../interpreter/internals/DOM/Document.js"></script>
 
-    <script src="browser/browser.js"></script>
-    <script src="tests/pureJavaScript/01-simpleVariables.js"></script>
+    <script src="../interpreter/DependencyCreator.js"></script>
+    <script src="../interpreter/VariableObject.js"></script>
+    <script src="../interpreter/ExecutionContextStack.js"></script>
+    <script src="../interpreter/InternalExecutor.js"></script>
+    <script src="../interpreter/Interpreter.js"></script>
+
+    <script src="../browser/browser.js"></script>
 </head>
 <body>
 <table>
     <tr>
-        <td><textarea id="originalSourceElement" style="width:490px" rows="20"></textarea></td>
+        <td>
+            <textarea id="originalSourceElement" style="width:490px" rows="20"></textarea>
+        </td>
         <td><textarea id="resultSourceElement" style="width:490px" rows="20"></textarea></td>
     </tr>
 </table>
+<button id="sliceButton">Slice Button</button><br/>
 <iframe id="firecrowFrame" height="800" width="1000"></iframe>
 <script>
-    (new Firecrow.RelationshipSetter).traverseHtmlElement(model.htmlElement);
+    function slice()
+    {
+        var sourceCode = document.getElementById("originalSourceElement").value.trim();
 
-    document.getElementById("originalSourceElement").value = Firecrow.CodeTextSerializer.generateCode(model);
+        if(sourceCode.trim() == "") { return; }
 
-    var browser = new Firecrow.Browser(model);
+        var model = Firecrow.HTMLParser.parse(sourceCode);
 
-    browser.url = model.pageUrl;
+        (new Firecrow.RelationshipSetter).traverseHtmlElement(model.htmlElement);
 
-    browser.registerSlicingCriteria([Firecrow.N_DependencyGraph.SlicingCriterion.createReadIdentifierCriterion("", "", "a")]);
-    browser.evaluatePage();
+        document.getElementById("originalSourceElement").value = Firecrow.CodeTextSerializer.generateCode(model);
 
-    Firecrow.N_DependencyGraph.Graph.sliceUnions = true;
+        var browser = new Firecrow.Browser(model);
 
-    browser.dependencyGraph.markGraph(model.htmlElement);
+        browser.url = model.pageUrl;
 
-    document.getElementById("resultSourceElement").value = Firecrow.CodeTextSerializer.generateSlicedCode(model);
+        browser.registerSlicingCriteria([Firecrow.N_DependencyGraph.SlicingCriterion.createReadIdentifierCriterion("", "", "a")]);
+        browser.evaluatePage();
+
+        Firecrow.N_DependencyGraph.Graph.sliceUnions = true;
+
+        browser.dependencyGraph.markGraph(model.htmlElement);
+
+        document.getElementById("resultSourceElement").value = Firecrow.CodeTextSerializer.generateSlicedCode(model);
+    };
+
+    slice();
+
+    document.getElementById("sliceButton").onclick = function()
+    {
+        slice();
+    };
 </script>
 </body>
 </html>
