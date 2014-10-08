@@ -3,19 +3,19 @@
     var ASTHelper = Firecrow.ASTHelper;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    Firecrow.CodeTextGenerator = CodeTextGenerator = function(isSlicing)
+    var CodeTextSerializer = Firecrow.CodeTextSerializer = function(isSlicing)
     {
         this.isSlicing = !!isSlicing;
     };
 
-    Firecrow.CodeTextGenerator.generateSlicedCode = function(model)
+    Firecrow.CodeTextSerializer.generateSlicedCode = function(model)
     {
-        var codeGenerator = new Firecrow.CodeTextGenerator(true);
+        var codeGenerator = new Firecrow.CodeTextSerializer(true);
 
         return codeGenerator.generateCode(model);
     }
 
-    Firecrow.CodeTextGenerator.generateProfiledCode = function(model)
+    Firecrow.CodeTextSerializer.generateProfiledCode = function(model)
     {
         ASTHelper.traverseAst(model.htmlElement, function(element)
         {
@@ -42,55 +42,47 @@
             }
         });
 
-        var postProcessor = new Firecrow.DependencyGraph.DependencyPostprocessor();
+        var postProcessor = new Firecrow.N_DependencyGraph.DependencyPostprocessor();
         postProcessor.processHtmlElement(model.htmlElement);
 
-        var codeGenerator = new Firecrow.CodeTextGenerator(true);
+        var codeGenerator = new Firecrow.CodeTextSerializer(true);
 
         return codeGenerator.generateCode(model);
     };
 
-    Firecrow.CodeTextGenerator.generateStandAloneCode = function(model)
+    Firecrow.CodeTextSerializer.generateStandAloneCode = function(model)
     {
-        var codeGenerator = new Firecrow.CodeTextGenerator();
+        var codeGenerator = new Firecrow.CodeTextSerializer();
 
         return codeGenerator.generateStandAloneCode(model);
     };
 
-    Firecrow.CodeTextGenerator.generateCode = function(model)
+    Firecrow.CodeTextSerializer.generateCode = function(model)
     {
-        var codeGenerator = new Firecrow.CodeTextGenerator();
+        var codeGenerator = new Firecrow.CodeTextSerializer();
 
         return codeGenerator.generateCode(model);
     };
 
-    Firecrow.CodeTextGenerator.generateJsCode = function(model)
+    Firecrow.CodeTextSerializer.generateJsCode = function(model)
     {
-        var codeGenerator = new Firecrow.CodeTextGenerator();
+        var codeGenerator = new Firecrow.CodeTextSerializer();
 
         return codeGenerator.generateJsCode(model);
     };
 
-    Firecrow.gen = Firecrow.CodeTextGenerator.generateJsCode;
+    Firecrow.gen = Firecrow.CodeTextSerializer.generateJsCode;
 
-    Firecrow.CodeTextGenerator.notifyError = function(message)
+    Firecrow.CodeTextSerializer.notifyError = function(message)
     {
-        console.warn("CodeTextGenerator - " + message);
+        console.warn("CodeTextSerializer - " + message);
     };
 
-    Firecrow.CodeTextGenerator.prototype =
+    Firecrow.CodeTextSerializer.prototype =
     {
         generateCode: function(model)
         {
-            try
-            {
-                return this.generateDocumentType(model.docType) + this.newLine
-                    + this.generateCodeFromHtmlElement(model.htmlElement, "root");
-            }
-            catch(e)
-            {
-                this.notifyError("Error when generating code: " + e);
-            }
+            return this.generateDocumentType(model.docType) + this.newLine +  this.generateCodeFromHtmlElement(model.htmlElement, "root");
         },
 
         generateDocumentType: function(documentType)
@@ -119,64 +111,49 @@
 
         generateCodeFromHtmlElement: function(htmlElement, origin)
         {
-            try
+            var htmlElementContent = "";
+
+            if(this.isSlicing && !htmlElement.shouldBeIncluded && htmlElement.type != "textNode"){ return htmlElementContent; }
+
+            var htmlElementType = htmlElement.type != "link" ? htmlElement.type : "style";
+
+            var code = this.generateStartHtmlTagString(htmlElementType) + this.generateHtmlElementAttributes(htmlElement) + (this.isEmptyElementType(htmlElementType) ? "/>" : ">");
+
+            if(htmlElement.type == "html")
             {
-                var htmlElementContent = "";
+                code += this.newLine;
+            }
 
-                if(this.isSlicing && !htmlElement.shouldBeIncluded && htmlElement.type != "textNode"){ return htmlElementContent; }
+            if(htmlElement.type == "script")
+            {
+                this.indent();
+                htmlElementContent = this.generateCodeFromScriptElement(htmlElement);
+                this.deIndent();
+            }
+            else if(htmlElement.type == "style" || htmlElement.type == "link")
+            {
+                this.indent();
+                htmlElementContent = this.generateCodeFromStyleElement(htmlElement);
+                this.deIndent();
+            }
+            else if (htmlElement.type == "textNode")
+            {
+                return htmlElement.textContent;
+            }
+            else
+            {
+                var children = htmlElement.childNodes;
 
-                var htmlElementType = htmlElement.type != "link" ? htmlElement.type : "style";
-
-                var code = this.generateStartHtmlTagString(htmlElementType)
-                    + this.generateHtmlElementAttributes(htmlElement)
-                    + (this.isEmptyElementType(htmlElementType) ? "/>" : ">");
-
-                if(htmlElement.type == "html")
+                if(children != null)
                 {
-                    code += this.newLine;
-                }
-
-                if(htmlElement.type == "script")
-                {
-                    this.indent();
-                    htmlElementContent = this.generateCodeFromScriptElement(htmlElement);
-                    this.deIndent();
-                }
-                else if(htmlElement.type == "style" || htmlElement.type == "link")
-                {
-                    this.indent();
-                    htmlElementContent = this.generateCodeFromStyleElement(htmlElement);
-                    this.deIndent();
-                }
-                else if (htmlElement.type == "textNode")
-                {
-                    return htmlElement.textContent;
-                }
-                else
-                {
-                    var children = htmlElement.childNodes;
-
-                    if(children != null)
+                    for(var i = 0, length = children.length; i < length; i++)
                     {
-                        for(var i = 0, length = children.length; i < length; i++)
-                        {
-                            htmlElementContent += this.generateCodeFromHtmlElement(children[i], "parent");
-                        }
+                        htmlElementContent += this.generateCodeFromHtmlElement(children[i], "parent");
                     }
                 }
-
-                if(htmlElement.type == "h3")
-                {
-
-                }
-
-                return code + htmlElementContent + (htmlElementType == "html" ? this.newLine : "") + this.generateEndHtmlTagString(htmlElementType);
             }
-            catch(e)
-            {
-                console.log("HTMLElement", htmlElement, "origin", origin, "Stack", e.stack);
-                this.notifyError("Error when generating htmlElement: " + e);
-            }
+
+            return code + htmlElementContent + (htmlElementType == "html" ? this.newLine : "") + this.generateEndHtmlTagString(htmlElementType);
         },
 
         _containsUiControlElementOrScript: function(htmlElement)
@@ -199,21 +176,17 @@
 
         generateCodeFromScriptElement: function(scriptElement)
         {
-            try
+            if(scriptElement != null && scriptElement.pathAndModel != null && scriptElement.pathAndModel.model != null)
             {
-                if(scriptElement != null && scriptElement.pathAndModel != null && scriptElement.pathAndModel.model != null)
-                {
-                    return this.newLine + this.generateJsCode(scriptElement.pathAndModel.model);
-                }
-
-                if(scriptElement.sourceCode != null)
-                {
-                    return this.newLine + scriptElement.sourceCode;
-                }
-
-                return "";
+                return this.newLine + this.generateJsCode(scriptElement.pathAndModel.model);
             }
-            catch(e) { this.notifyError("Error when generating code from script element: " + e); }
+
+            if(scriptElement.sourceCode != null)
+            {
+                return this.newLine + scriptElement.sourceCode;
+            }
+
+            return "";
         },
 
         generateStandAloneCode: function(element)
@@ -261,82 +234,75 @@
 
         generateJsCode: function(element)
         {
-            try
+            if(element == null || (this.isSlicing && !element.shouldBeIncluded)) { return "";}
+
+            if (ASTHelper.isProgram(element)) { return this.generateProgram(element); }
+            else if (ASTHelper.isStatement(element))
             {
-                if(element == null || (this.isSlicing && !element.shouldBeIncluded)) { return "";}
+                var isElseIfStatement = ASTHelper.isElseIfStatement(element);
 
-                if (ASTHelper.isProgram(element)) { return this.generateProgram(element); }
-                else if (ASTHelper.isStatement(element))
+                var statementCode = this.generateStandAloneCode(element);
+
+                if(element.comments != null)
                 {
-                    var isElseIfStatement = ASTHelper.isElseIfStatement(element);
-
-                    var statementCode = this.generateStandAloneCode(element);
-
-                    if(element.comments != null)
+                    var commentText = "/*";
+                    element.comments.forEach(function(comment)
                     {
-                        var commentText = "/*";
-                        element.comments.forEach(function(comment)
+                        if(commentText.indexOf(comment) == -1)
                         {
-                            if(commentText.indexOf(comment) == -1)
-                            {
-                                commentText += comment + "; ";
-                            }
-                        }, this);
-                        commentText += "*/"
-
-                        if(ASTHelper.isLoopStatement(element) || ASTHelper.isIfStatement(element))
-                        {
-                            statementCode = commentText + this.newLine + this.whitespace + statementCode;
+                            commentText += comment + "; ";
                         }
-                        else
-                        {
-                            statementCode += commentText;
-                        }
-                    }
+                    }, this);
+                    commentText += "*/";
 
-                    return statementCode;
-                }
-                else if (ASTHelper.isFunction(element))
-                {
-                    return (ASTHelper.isFunctionDeclaration(element) ? this.whitespace : "")
-                        + this.generateFromFunction(element);
-                }
-                else if (ASTHelper.isExpression(element)) { return this.generateExpression(element); }
-                else if (ASTHelper.isSwitchCase(element)) { return this.generateFromSwitchCase(element); }
-                else if (ASTHelper.isCatchClause(element)) { return this.generateFromCatchClause(element); }
-                else if (ASTHelper.isVariableDeclaration(element))
-                {
-                    var isForStatementInit = ASTHelper.isForStatementInit(element);
-
-                    var variableDeclarationCode = this.generateFromVariableDeclaration(element);
-
-                    if(element.comments != null)
+                    if(ASTHelper.isLoopStatement(element) || ASTHelper.isIfStatement(element))
                     {
-                        variableDeclarationCode += "/*";
-                        element.comments.forEach(function(comment)
-                        {
-                            variableDeclarationCode += comment + "; ";
-                        }, this);
-                        variableDeclarationCode += "*/"
+                        statementCode = commentText + this.newLine + this.whitespace + statementCode;
                     }
-
-                    if(isForStatementInit) { return variableDeclarationCode; }
-                    if(variableDeclarationCode == "") { return ""; }
-
-                    return this.whitespace + variableDeclarationCode + this._SEMI_COLON + this.newLine;
+                    else
+                    {
+                        statementCode += commentText;
+                    }
                 }
-                else if (ASTHelper.isVariableDeclarator(element)) { return this.generateFromVariableDeclarator(element); }
-                else if (ASTHelper.isLiteral(element)) { return this.generateFromLiteral(element); }
-                else if (ASTHelper.isIdentifier(element)) { return this.generateFromIdentifier(element); }
-                else if (ASTHelper.isObjectExpressionPropertyValue(element)) { return this.generateFromObjectExpressionProperty(element); }
-                else
-                {
-                    this.notifyError("Error while generating code unidentified ast element: ");
-                }
+
+                return statementCode;
             }
-            catch(e)
+            else if (ASTHelper.isFunction(element))
             {
-                this.notifyError("Error while generating code: " + e + "@ code line: " + (element != null && element.loc != null) ? element.loc.start.line : "");
+                return (ASTHelper.isFunctionDeclaration(element) ? this.whitespace : "")
+                    + this.generateFromFunction(element);
+            }
+            else if (ASTHelper.isExpression(element)) { return this.generateExpression(element); }
+            else if (ASTHelper.isSwitchCase(element)) { return this.generateFromSwitchCase(element); }
+            else if (ASTHelper.isCatchClause(element)) { return this.generateFromCatchClause(element); }
+            else if (ASTHelper.isVariableDeclaration(element))
+            {
+                var isForStatementInit = ASTHelper.isForStatementInit(element);
+
+                var variableDeclarationCode = this.generateFromVariableDeclaration(element);
+
+                if(element.comments != null)
+                {
+                    variableDeclarationCode += "/*";
+                    element.comments.forEach(function(comment)
+                    {
+                        variableDeclarationCode += comment + "; ";
+                    }, this);
+                    variableDeclarationCode += "*/"
+                }
+
+                if(isForStatementInit) { return variableDeclarationCode; }
+                if(variableDeclarationCode == "") { return ""; }
+
+                return this.whitespace + variableDeclarationCode + this._SEMI_COLON + this.newLine;
+            }
+            else if (ASTHelper.isVariableDeclarator(element)) { return this.generateFromVariableDeclarator(element); }
+            else if (ASTHelper.isLiteral(element)) { return this.generateFromLiteral(element); }
+            else if (ASTHelper.isIdentifier(element)) { return this.generateFromIdentifier(element); }
+            else if (ASTHelper.isObjectExpressionPropertyValue(element)) { return this.generateFromObjectExpressionProperty(element); }
+            else
+            {
+                this.notifyError("Error while generating code unidentified ast element: ");
             }
 
             return "";
@@ -344,90 +310,75 @@
 
         generateProgram: function(programElement)
         {
-            try
+            var code = "";
+
+            if(programElement.body != null)
             {
-                var code = "";
+                var body = programElement.body;
 
-                if(programElement.body != null)
+                if(body != null)
                 {
-                    var body = programElement.body;
-
-                    if(body != null)
+                    for(var i = 0, length = body.length; i < length; i++)
                     {
-                        for(var i = 0, length = body.length; i < length; i++)
-                        {
-                            code += this.generateJsCode(body[i]);
-                        }
+                        code += this.generateJsCode(body[i]);
                     }
                 }
-
-                return code;
             }
-            catch(e) { this.notifyError("Error when generating program: " + e); }
+
+            return code;
         },
 
         generateStatement: function(statement)
         {
-            try
-            {
-                if(statement == null || (this.isSlicing && !statement.shouldBeIncluded)) { return "";}
+            if(statement == null || (this.isSlicing && !statement.shouldBeIncluded)) { return "";}
 
-                if (ASTHelper.isEmptyStatement(statement))  { return this.generateFromEmptyStatement(statement); }
-                else if (ASTHelper.isBlockStatement(statement)) { return this.generateFromBlockStatement(statement); }
-                else if (ASTHelper.isExpressionStatement(statement))
-                {
-                    var expressionStatementCode = this.generateFromExpressionStatement(statement);
-
-                    return expressionStatementCode != "" ? expressionStatementCode + this._SEMI_COLON
-                        : "";
-                }
-                else if (ASTHelper.isIfStatement(statement)) { return this.generateFromIfStatement(statement); }
-                else if (ASTHelper.isWhileStatement(statement)) { return this.generateFromWhileStatement(statement); }
-                else if (ASTHelper.isDoWhileStatement(statement)) { return this.generateFromDoWhileStatement(statement); }
-                else if (ASTHelper.isForStatement(statement)) { return this.generateFromForStatement(statement); }
-                else if (ASTHelper.isForInStatement(statement)) { return this.generateFromForInStatement(statement); }
-                else if (ASTHelper.isLabeledStatement(statement)) { return this.generateFromLabeledStatement(statement); }
-                else if (ASTHelper.isBreakStatement(statement)) { return this.generateFromBreakStatement(statement) + this._SEMI_COLON ; }
-                else if (ASTHelper.isContinueStatement(statement)) { return this.generateFromContinueStatement(statement) + this._SEMI_COLON ; }
-                else if (ASTHelper.isReturnStatement(statement)) { return this.generateFromReturnStatement(statement)  + this._SEMI_COLON ; }
-                else if (ASTHelper.isWithStatement(statement)) { return this.generateFromWithStatement(statement); }
-                else if (ASTHelper.isTryStatement(statement)) { return this.generateFromTryStatement(statement); }
-                else if (ASTHelper.isThrowStatement(statement)) { return this.generateFromThrowStatement(statement); }
-                else if (ASTHelper.isSwitchStatement(statement)) { return this.generateFromSwitchStatement(statement); }
-                else if (ASTHelper.isVariableDeclaration(statement)) { return this.generateFromVariableDeclaration(statement); }
-                else { this.notifyError("Error: AST Statement element not defined: " + statement.type);  return "";}
-            }
-            catch(e)
+            if (ASTHelper.isEmptyStatement(statement))  { return this.generateFromEmptyStatement(statement); }
+            else if (ASTHelper.isBlockStatement(statement)) { return this.generateFromBlockStatement(statement); }
+            else if (ASTHelper.isExpressionStatement(statement))
             {
-                this.notifyError("Error when generating code from a statement: " + e);
+                var expressionStatementCode = this.generateFromExpressionStatement(statement);
+
+                return expressionStatementCode != "" ? expressionStatementCode + this._SEMI_COLON
+                                                     : "";
             }
+            else if (ASTHelper.isIfStatement(statement)) { return this.generateFromIfStatement(statement); }
+            else if (ASTHelper.isWhileStatement(statement)) { return this.generateFromWhileStatement(statement); }
+            else if (ASTHelper.isDoWhileStatement(statement)) { return this.generateFromDoWhileStatement(statement); }
+            else if (ASTHelper.isForStatement(statement)) { return this.generateFromForStatement(statement); }
+            else if (ASTHelper.isForInStatement(statement)) { return this.generateFromForInStatement(statement); }
+            else if (ASTHelper.isLabeledStatement(statement)) { return this.generateFromLabeledStatement(statement); }
+            else if (ASTHelper.isBreakStatement(statement)) { return this.generateFromBreakStatement(statement) + this._SEMI_COLON ; }
+            else if (ASTHelper.isContinueStatement(statement)) { return this.generateFromContinueStatement(statement) + this._SEMI_COLON ; }
+            else if (ASTHelper.isReturnStatement(statement)) { return this.generateFromReturnStatement(statement)  + this._SEMI_COLON ; }
+            else if (ASTHelper.isWithStatement(statement)) { return this.generateFromWithStatement(statement); }
+            else if (ASTHelper.isTryStatement(statement)) { return this.generateFromTryStatement(statement); }
+            else if (ASTHelper.isThrowStatement(statement)) { return this.generateFromThrowStatement(statement); }
+            else if (ASTHelper.isSwitchStatement(statement)) { return this.generateFromSwitchStatement(statement); }
+            else if (ASTHelper.isVariableDeclaration(statement)) { return this.generateFromVariableDeclaration(statement); }
+            else { this.notifyError("Error: AST Statement element not defined: " + statement.type);  return "";}
         },
 
         generateExpression: function(expression)
         {
-            try
-            {
-                if(expression == null || (this.isSlicing && !expression.shouldBeIncluded)) { return "";}
+            if(expression == null || (this.isSlicing && !expression.shouldBeIncluded)) { return "";}
 
-                if (ASTHelper.isAssignmentExpression(expression)) { return this.generateFromAssignmentExpression(expression); }
-                else if (ASTHelper.isUnaryExpression(expression)) { return this.generateFromUnaryExpression(expression); }
-                else if (ASTHelper.isBinaryExpression(expression)) { return this.generateFromBinaryExpression(expression); }
-                else if (ASTHelper.isLogicalExpression(expression)) { return this.generateFromLogicalExpression(expression); }
-                else if (ASTHelper.isLiteral(expression)) { return this.generateFromLiteral(expression); }
-                else if (ASTHelper.isIdentifier(expression)) { return this.generateFromIdentifier(expression); }
-                else if (ASTHelper.isUpdateExpression(expression)) { return this.generateFromUpdateExpression(expression); }
-                else if (ASTHelper.isNewExpression(expression)) { return this.generateFromNewExpression(expression); }
-                else if (ASTHelper.isConditionalExpression(expression)) { return this.generateFromConditionalExpression(expression); }
-                else if (ASTHelper.isThisExpression(expression)) { return this.generateFromThisExpression(expression); }
-                else if (ASTHelper.isCallExpression(expression)) { return this.generateFromCallExpression(expression); }
-                else if (ASTHelper.isMemberExpression(expression)) { return this.generateFromMemberExpression(expression); }
-                else if (ASTHelper.isSequenceExpression(expression)) { return this.generateFromSequenceExpression(expression); }
-                else if (ASTHelper.isArrayExpression(expression)) { return this.generateFromArrayExpression(expression); }
-                else if (ASTHelper.isObjectExpression(expression)) { return this.generateFromObjectExpression(expression); }
-                else if (ASTHelper.isFunctionExpression(expression)) { return this.generateFromFunction(expression, true); }
-                else { this.notifyError("Error: AST Expression element not defined: " + expression.type);  return "";}
-            }
-            catch(e) { this.notifyError("Error when generating code from an expression:" + e + e.stack); }
+            if (ASTHelper.isAssignmentExpression(expression)) { return this.generateFromAssignmentExpression(expression); }
+            else if (ASTHelper.isUnaryExpression(expression)) { return this.generateFromUnaryExpression(expression); }
+            else if (ASTHelper.isBinaryExpression(expression)) { return this.generateFromBinaryExpression(expression); }
+            else if (ASTHelper.isLogicalExpression(expression)) { return this.generateFromLogicalExpression(expression); }
+            else if (ASTHelper.isLiteral(expression)) { return this.generateFromLiteral(expression); }
+            else if (ASTHelper.isIdentifier(expression)) { return this.generateFromIdentifier(expression); }
+            else if (ASTHelper.isUpdateExpression(expression)) { return this.generateFromUpdateExpression(expression); }
+            else if (ASTHelper.isNewExpression(expression)) { return this.generateFromNewExpression(expression); }
+            else if (ASTHelper.isConditionalExpression(expression)) { return this.generateFromConditionalExpression(expression); }
+            else if (ASTHelper.isThisExpression(expression)) { return this.generateFromThisExpression(expression); }
+            else if (ASTHelper.isCallExpression(expression)) { return this.generateFromCallExpression(expression); }
+            else if (ASTHelper.isMemberExpression(expression)) { return this.generateFromMemberExpression(expression); }
+            else if (ASTHelper.isSequenceExpression(expression)) { return this.generateFromSequenceExpression(expression); }
+            else if (ASTHelper.isArrayExpression(expression)) { return this.generateFromArrayExpression(expression); }
+            else if (ASTHelper.isObjectExpression(expression)) { return this.generateFromObjectExpression(expression); }
+            else if (ASTHelper.isFunctionExpression(expression)) { return this.generateFromFunction(expression, true); }
+            else { this.notifyError("Error: AST Expression element not defined: " + expression.type);  return "";}
         },
 
         generateFromFunction: function(functionDecExp)
@@ -762,64 +713,52 @@
 
         generateFromObjectExpressionProperty: function(property)
         {
-            try
+            if(this.isSlicing && !property.shouldBeIncluded) { return ""; }
+
+            var code = "";
+
+            if (property.kind == "init")
             {
-                if(this.isSlicing && !property.shouldBeIncluded) { return ""; }
+                code += this.generateJsCode(property.key);
+                var valueCode = this.generateJsCode(property.value);
 
-                var code = "";
-
-                if (property.kind == "init")
-                {
-                    code += this.generateJsCode(property.key);
-                    var valueCode = this.generateJsCode(property.value);
-
-                    if(valueCode === "") { valueCode = "null"; }
-                    if(this.isSlicing && !property.shouldBeIncluded) {}
-                    else
-                    {
-                        code += this._COLON + " " + valueCode;
-                    }
-                }
+                if(valueCode === "") { valueCode = "null"; }
+                if(this.isSlicing && !property.shouldBeIncluded) {}
                 else
                 {
-                    code += this.generateJsCode(property.key);
-
-                    if (ASTHelper.isFunctionExpression(property.value))
-                        code += this.generateFromFunction(property.value);
-                    else
-                        code += this.generateExpression(property.value);
+                    code += this._COLON + " " + valueCode;
                 }
-
-                return code;
             }
-            catch(e) { this.notifyError("Error when generating from object expression property:" + e); }
+            else
+            {
+                code += this.generateJsCode(property.key)
+                     +  (ASTHelper.isFunctionExpression(property.value) ? this.generateFromFunction(property.value)
+                                                                        : this.generateExpression(property.value));
+            }
+
+            return code;
         },
 
         _objectExpressionContainsOnlySimpleProperties: function(objectExpression)
         {
-            try
+            var properties = objectExpression.properties;
+
+            if(properties != null)
             {
-                var properties = objectExpression.properties;
-                var generatedProperties = 0;
-
-                if(properties != null)
+                for (var i = 0, length = properties.length; i < length; i++)
                 {
-                    for (var i = 0, length = properties.length; i < length; i++)
+                    var property = properties[i];
+
+                    if(this.isSlicing && !property.shouldBeIncluded) { continue; }
+
+                    if(property.value != null && !ASTHelper.isLiteral(property.value))
                     {
-                        var property = properties[i];
-
-                        if(this.isSlicing && !property.shouldBeIncluded) { continue; }
-
-                        if(property.value != null && !ASTHelper.isLiteral(property.value))
-                        {
-                            return false
-                        }
+                        return false
                     }
                 }
-
-                return true;
             }
-            catch(e) { this.notifyError("Error when checking if object expression contains simple properties:" + e); }
+
+            return true;
         },
 
         generateFromIfStatement: function(ifStatement)
@@ -909,7 +848,7 @@
             if(leftPart === "" && forInBody === "") { return ""; }
 
             forInStatement.left.shouldBeIncluded = true;
-            if(leftPart === "") { leftPart = Firecrow.CodeTextGenerator.generateJsCode(forInStatement.left); }
+            if(leftPart === "") { leftPart = Firecrow.CodeTextSerializer.generateJsCode(forInStatement.left); }
 
             forInBody = forInBody.length != 0 ? forInBody : this._SEMI_COLON;
 
@@ -1136,61 +1075,50 @@
 
         getSequenceCode: function(sequence)
         {
-            try
+            var code = "";
+
+            if(sequence == null) { return code; }
+
+            for(var i = 0, length = sequence.length; i < length; i++)
             {
-                var code = "";
+                var item = sequence[i];
 
-                if(sequence == null) { return code; }
+                if(i != 0 && code.trim() != "") { code += this._COMMA +  " "; }
 
-                for(var i = 0, length = sequence.length; i < length; i++)
+                if(this.isSlicing && !item.shouldBeIncluded)
                 {
-                    var item = sequence[i];
-
-                    if(i != 0 && code.trim() != "") { code += this._COMMA +  " "; }
-
-                    if(this.isSlicing && !item.shouldBeIncluded)
-                    {
-                        code += "null";
-                        continue;
-                    }
-
-                    code += this.generateJsCode(item);
+                    code += "null";
+                    continue;
                 }
 
-                return code;
+                code += this.generateJsCode(item);
             }
-            catch(e)
-            {
-                this.notifyError("Error when generating sequence code:" + e);
-            }
+
+            return code;
         },
 
         generateCodeFromStyleElement: function(styleElement)
         {
-            try
+            var cssText = "";
+
+            var rules = styleElement.cssRules || [];
+
+            this.indent();
+
+            for(var i = 0, length = rules.length; i < length; i++)
             {
-                var cssText = "";
+                var rule = rules[i];
 
-                var rules = styleElement.cssRules || [];
+                if(this.isSlicing && !rule.shouldBeIncluded) { continue; }
 
-                this.indent();
-
-                for(var i = 0, length = rules.length; i < length; i++)
-                {
-                    var rule = rules[i];
-
-                    if(this.isSlicing && !rule.shouldBeIncluded) { continue; }
-
-                    cssText += this.newLine + this.whitespace + rule.cssText;
-                }
-
-                if(cssText !== "") { cssText += this.newLine;}
-
-                this.deIndent();
-
-                return cssText;
+                cssText += this.newLine + this.whitespace + rule.cssText;
             }
-            catch(e) { this.notifyError("Error when generating code from style element: " + e); }
+
+            if(cssText !== "") { cssText += this.newLine;}
+
+            this.deIndent();
+
+            return cssText;
         },
 
         generateStartHtmlTagString: function(tagName)
@@ -1200,28 +1128,24 @@
 
         generateHtmlElementAttributes: function(htmlElement)
         {
-            try
+            var attributes = htmlElement.attributes;
+            var attributesText = "";
+
+            if(attributes == null) { return attributesText; }
+
+            for(var i = 0, length = attributes.length; i < length; i++)
             {
-                var attributes = htmlElement.attributes;
-                var attributesText = "";
+                var attribute = attributes[i];
 
-                if(attributes == null) { return attributesText; }
-
-                for(var i = 0, length = attributes.length; i < length; i++)
+                if(htmlElement.type == "script" && attribute.name == "src")
                 {
-                    var attribute = attributes[i];
-
-                    if(htmlElement.type == "script" && attribute.name == "src")
-                    {
-                        continue;
-                    }
-
-                    attributesText += " " + attribute.name + '="' + attribute.value + '"';
+                    continue;
                 }
 
-                return attributesText;
+                attributesText += " " + attribute.name + '="' + attribute.value + '"';
             }
-            catch(e) { this.notifyError("Error when generating html element attributes: " + e); }
+
+            return attributesText;
         },
 
         generateEndHtmlTagString: function(tag)
@@ -1240,7 +1164,7 @@
             this.whitespace = this.whitespace.replace(/\s\s$/, "");
         },
 
-        notifyError: function(message) { debugger; Firecrow.CodeTextGenerator.notifyError(message); },
+        notifyError: function(message) { debugger; Firecrow.CodeTextSerializer.notifyError(message); },
 
         _isExternalScriptElement: function(htmlElement)
         {

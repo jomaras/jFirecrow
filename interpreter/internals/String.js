@@ -152,7 +152,7 @@
 
             if(functionName == "toString" && ValueTypeHelper.isFunction(thisObject.jsValue)) //toString called on a function
             {
-                return globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, Firecrow.CodeTextGenerator.generateJsCode(thisObject.codeConstruct));
+                return globalObject.internalExecutor.createInternalPrimitiveObject(callExpression, Firecrow.CodeTextSerializer.generateJsCode(thisObject.codeConstruct));
             }
 
             switch(functionName)

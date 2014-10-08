@@ -1230,7 +1230,7 @@
                 (
                         "Exception generating error at:" + " - "
                         + this.commands[this.currentCommandIndex].codeConstruct.loc.start.line + ": "
-                        + Firecrow.CodeTextGenerator.generateJsCode(this.commands[this.currentCommandIndex].codeConstruct)
+                        + Firecrow.CodeTextSerializer.generateJsCode(this.commands[this.currentCommandIndex].codeConstruct)
                         + "Call Stack: " + this.executionContextStack.getStackLines()
                 );
             }

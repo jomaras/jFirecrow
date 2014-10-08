@@ -19,7 +19,7 @@
             if(this._isNonConstructorObjectCreation(constructorFunction, creationCodeConstruct)) { return this.createNonConstructorObject(creationCodeConstruct); }
             else if(this._isUserConstructorObjectCreation(constructorFunction)) { return this._createObjectFromUserFunction(constructorFunction, creationCodeConstruct, argumentValues); }
             else if (this.isInternalConstructor(constructorFunction)) { return this.executeInternalConstructor(creationCodeConstruct, constructorFunction, argumentValues); }
-            else { console.log(Firecrow.CodeTextGenerator.generateJsCode(creationCodeConstruct)); this.notifyError("Unknown state when creating object"); return null; }
+            else { console.log(Firecrow.CodeTextSerializer.generateJsCode(creationCodeConstruct)); this.notifyError("Unknown state when creating object"); return null; }
         },
 
         createInternalPrimitiveObject: function(codeConstruct, value, symbolicValue)

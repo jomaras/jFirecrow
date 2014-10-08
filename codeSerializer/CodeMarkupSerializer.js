@@ -4,7 +4,7 @@
     var ASTHelper = Firecrow.ASTHelper;
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
 
-    Firecrow.CodeMarkupGenerator =
+    Firecrow.CodeMarkupSerializer =
     {
         generateHtmlRepresentation: function(root)
         {
@@ -158,7 +158,7 @@
                         while(cssRules[0] === " ")
                             cssRules = cssRules.replace(" ", "");
 
-                        html += '<div class="node cssRule" id="node' + CodeMarkupGenerator.formatId(cssModel.rules[i].nodeId) +'">';
+                        html += '<div class="node cssRule" id="node' + CodeMarkupSerializer.formatId(cssModel.rules[i].nodeId) +'">';
                         //html += '<span class="node cssSelector">' + cssModel.rules[i].selector + "</span><br>";
                         html += '<span class="node cssSelector">' + cssModel.rules[i].selector + '</span><br>';
                         html += "{ <br>";
@@ -216,14 +216,14 @@
                 else if (ASTHelper.isIdentifier(element)) { return this.generateFromIdentifier(element); }
                 else
                 {
-                    alert("Error while generating HTML in codeMarkupGenerator: unidentified ast element.");
+                    alert("Error while generating HTML in CodeMarkupSerializer: unidentified ast element.");
                     return "";
                 }
             }
             catch(e)
             {
                 debugger;
-                alert("Error while generating HTML in codeMarkupGenerator: " + e);
+                alert("Error while generating HTML in CodeMarkupSerializer: " + e);
             }
         },
 

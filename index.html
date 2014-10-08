@@ -70,7 +70,7 @@
     <script>
         (new Firecrow.RelationshipSetter).traverseHtmlElement(model.htmlElement);
 
-        document.getElementById("originalSourceElement").value = Firecrow.CodeTextGenerator.generateCode(model);
+        document.getElementById("originalSourceElement").value = Firecrow.CodeTextSerializer.generateCode(model);
 
         var browser = new Firecrow.Browser(model);
 
@@ -83,7 +83,7 @@
 
         browser.dependencyGraph.markGraph(model.htmlElement);
 
-        document.getElementById("resultSourceElement").value = Firecrow.CodeTextGenerator.generateSlicedCode(model);
+        document.getElementById("resultSourceElement").value = Firecrow.CodeTextSerializer.generateSlicedCode(model);
     </script>
 </body>
 </html>
