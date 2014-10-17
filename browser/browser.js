@@ -2,6 +2,7 @@
     /*************************************************************************************/
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
+    var RelationshipSetter = Firecrow.RelationshipSetter;
 
     var Browser = Firecrow.Browser = function(pageModel)
     {
@@ -696,6 +697,11 @@
                 sourceNode, targetNode, dependencyCreationInfo,
                 destinationNodeDependencyInfo, shouldNotFollowDependencies, isValueDependency
             );
+        },
+
+        logBreakContinueReturnExecuted: function()
+        {
+
         },
 
         logImportantConstructEvaluated: function(node)

@@ -435,7 +435,7 @@
 
                     this.dependencyCreator.createReturnDependencies(command);
 
-                    this.globalObject.browser.callBreakContinueReturnEventCallbacks
+                    this.globalObject.browser.logBreakContinueReturnExecuted
                     (
                         command.codeConstruct,
                         this.globalObject.getPreciseEvaluationPositionId(),

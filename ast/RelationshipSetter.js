@@ -28,6 +28,8 @@
             }
         },
 
+        NODE_ID: 0,
+
         traverseProgram: function(program, htmlElement)
         {
             this.establishParentChildRelationshipAndSetChildId(program, htmlElement);
@@ -152,7 +154,7 @@
 
         traverseFunctionDeclaration: function(functionDeclaration)
         {
-            var parameters = functionDeclaration.parameters;
+            var parameters = functionDeclaration.params;
 
             for(var i = 0; i < parameters.length; i++)
             {
@@ -589,6 +591,7 @@
             child.parent = parent;
             child.children = [];
             child.parentBranching = this._currentBranchingConstruct;
+            child.nodeId = this.NODE_ID++;
 
             if(parent != null) { parent.children.push(child); }
         }

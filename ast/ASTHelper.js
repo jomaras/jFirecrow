@@ -731,15 +731,37 @@
                 if(!astElement.hasOwnProperty(propName)) { continue; }
 
                 //Do not traverse the source code location properties and parents and graphNodes!
-                if(propName == "loc" || propName == "parent" || propName == "graphNode"
-                || propName == "children" || propName == "domElement" || propName == "graphNode"
-                || propName == "htmlNode" || propName == "attributes" || propName == "previousCondition"
-                || propName == "includesNodes" || propName == "includedByNodes" || propName == "type"
-                || propName == "eventTraces" || propName == "inclusionDependencyConstraint" || propName == "blockStackConstructs"
-                || propName == "executorEventsMap" || propName == "simpleDependencies" || propName == "match"
-                || propName == "globalObject" || propName == "dependencies" || propName == "reverseDependencies"
-                || propName == "evalConstruct" || propName == "controlParent"
-                || (ignoreProperties && ignoreProperties.indexOf(propName) != -1)) { continue; }
+                switch(propName)
+                {
+                    case "loc":
+                    case "parent":
+                    case "graphNode":
+                    case "children":
+                    case "domElement":
+                    case "graphNode":
+                    case "htmlNode":
+                    case "attributes":
+                    case "previousCondition":
+                    case "includesNodes":
+                    case "includedByNodes":
+                    case "type":
+                    case "eventTraces":
+                    case "inclusionDependencyConstraint":
+                    case "blockStackConstructs":
+                    case "executorEventsMap":
+                    case "simpleDependencies":
+                    case "match":
+                    case "globalObject":
+                    case "dependencies":
+                    case "reverseDependencies":
+                    case "evalConstruct":
+                    case "controlParent":
+                    case "parentBranching":
+                        continue;
+                    default:
+                }
+
+                if(ignoreProperties && ignoreProperties.indexOf(propName) != -1) { continue; }
 
                 var propertyValue = astElement[propName];
 
@@ -773,14 +795,35 @@
             for(var propName in astElement)
             {
                 //Do not traverse the source code location properties and parents and graphNodes!
-                if(propName == "loc" || propName == "parent" || propName == "graphNode"
-                || propName == "children" || propName == "domElement" || propName == "graphNode"
-                || propName == "htmlNode" || propName == "attributes" || propName == "previousCondition"
-                || propName == "includesNodes" || propName == "includedByNodes" || propName == "type"
-                || propName == "eventTraces" || propName == "inclusionDependencyConstraint" || propName == "blockStackConstructs"
-                || propName == "executorEventsMap" || propName == "simpleDependencies" || propName == "match"
-                || propName == "globalObject" || propName == "dependencies" || propName == "reverseDependencies"
-                || propName == "evalConstruct" || propName == "controlParent") { continue; }
+                switch(propName)
+                {
+                    case "loc":
+                    case "parent":
+                    case "graphNode":
+                    case "children":
+                    case "domElement":
+                    case "graphNode":
+                    case "htmlNode":
+                    case "attributes":
+                    case "previousCondition":
+                    case "includesNodes":
+                    case "includedByNodes":
+                    case "type":
+                    case "eventTraces":
+                    case "inclusionDependencyConstraint":
+                    case "blockStackConstructs":
+                    case "executorEventsMap":
+                    case "simpleDependencies":
+                    case "match":
+                    case "globalObject":
+                    case "dependencies":
+                    case "reverseDependencies":
+                    case "evalConstruct":
+                    case "controlParent":
+                    case "parentBranching":
+                        continue;
+                    default:
+                }
 
                 var propertyValue = astElement[propName];
 

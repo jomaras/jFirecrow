@@ -22,13 +22,12 @@ page.onConsoleMessage = function(msg)
     console.log('CONSOLE: ' + msg);
 };
 
-
 var currentScriptFile = system.args[0];
 var currentDirectory = currentScriptFile.replace(/\w+\.js/, "");
 
 var testsFolder = currentDirectory + "tests" + fs.separator;
 var expectedResultsFolder = currentDirectory + "expectedResults" + fs.separator;
-var phatnomJsTestEnvironmentPage = "http://localhost/jFirecrow/testing/phatnomJsTestEnvironment.html";
+var phantomJsTestEnvironmentPage = "http://localhost/jFirecrow/testing/phantomJsTestEnvironment.html";
 
 var testFiles = [];
 
@@ -59,7 +58,7 @@ function processNextTest()
 
     var test = testFiles.pop();
 
-    page.open(phatnomJsTestEnvironmentPage, function(status)
+    page.open(phantomJsTestEnvironmentPage, function(status)
     {
         if(status != "success") { console.error(status, test.testFile); }
 

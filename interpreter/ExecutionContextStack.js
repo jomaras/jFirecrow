@@ -4,11 +4,11 @@
     var ValueTypeHelper = Firecrow.ValueTypeHelper;
     var ASTHelper = Firecrow.ASTHelper;
 
-    var ExecutionContext = Firecrow.N_Interpreter.ExecutionContext = function(variableObject, scopeChain, thisObject, globalObject, contextCreationCommand)
+    var ExecutionContext = Firecrow.N_Interpreter.ExecutionContext = function(variableObject, scopeChain, thisObject, globalObject)
     {
         this.id = ExecutionContext.LAST_ID++;
 
-        this.variableObject = variableObject || globalObject.globalVariableObject;
+        this.variableObject = variableObject || globalObject;
         this.thisObject = thisObject || globalObject;
 
         if(this.thisObject != globalObject && !(this.thisObject instanceof Firecrow.N_Interpreter.fcValue))
@@ -206,11 +206,6 @@
                             variableObject[identifierName] = value;
                         }
 
-                        if(i != this.stack.length - 1 || j != scopeChain.length - 1)
-                        {
-                            this.globalObject.browser.logModifyingExternalContextIdentifier(identifier);
-                        }
-
                         return;
                     }
                 }
@@ -336,6 +331,11 @@
             this.activeContext = executionContext;
         },
 
+        exitFunctionContext: function(exitFunctionContextCommand)
+        {
+            this.pop()
+        },
+
         pop: function()
         {
             if(this.stack.length == 0) { this.notifyError("Can not pop an empty stack"); return; }
@@ -385,13 +385,6 @@
 
             var sentArgumentsValues = null;
             var arguments = [];
-
-            this.globalObject.browser.logEnteringFunction
-            (
-                enterFunctionCommand.parentFunctionCommand != null ? enterFunctionCommand.parentFunctionCommand.codeConstruct : null,
-                functionConstruct,
-                Firecrow.N_Interpreter.ExecutionContext.LAST_ID
-            );
 
             if(enterFunctionCommand.isEnterEventHandler) { sentArgumentsValues = enterFunctionCommand.argumentValues; }
             else
