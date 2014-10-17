@@ -52,6 +52,8 @@ function traverseTestFilesInFolder(testFolderName)
     });
 }
 
+testFiles.reverse();
+
 function processNextTest()
 {
     if(testFiles.length == 0) { phantom.exit(); }
@@ -83,6 +85,11 @@ function processNextTest()
         {
             console.log("TEST SUCCESS: ", test.testFile, "successful");
         }
+
+        setTimeout(function()
+        {
+            processNextTest()
+        }, 200);
     });
 }
 

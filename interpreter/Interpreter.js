@@ -384,6 +384,7 @@
                 case "EvalNewExpression":
                     break;
                 case "EvalCallExpression":
+                    this.dependencyCreator.createDependenciesForCallExpression(command);
                     break;
                 case "EnterFunctionContext":
 

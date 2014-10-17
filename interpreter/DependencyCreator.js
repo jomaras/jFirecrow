@@ -566,9 +566,14 @@
             }
         },
 
-        createDependenciesForCallInternalFunction: function(callInternalFunctionCommand)
+        createDependenciesForCallExpression: function(callCommand)
         {
-            var callExpression = callInternalFunctionCommand.codeConstruct;
+            this.createDependenciesForCallInternalFunction(callCommand);
+        },
+
+        createDependenciesForCallInternalFunction: function(callCommand)
+        {
+            var callExpression = callCommand.codeConstruct;
 
             //Callback function called with an internal function
             if(callExpression == null) { return; }
@@ -578,9 +583,9 @@
 
             this.globalObject.browser.createDependency(callExpression, callExpression.callee, evaluationPosition);
 
-            if(callInternalFunctionCommand.isCall || callInternalFunctionCommand.isApply)
+            if(callCommand.isCall || callCommand.isApply)
             {
-                this._createDependenciesToCallApplyInternalFunctionCall(callInternalFunctionCommand, args, callExpression);
+                this._createDependenciesToCallApplyInternalFunctionCall(callCommand, args, callExpression);
             }
             else
             {
