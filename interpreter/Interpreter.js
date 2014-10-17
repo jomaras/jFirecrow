@@ -19,7 +19,7 @@
 
         this.globalObject.executionContextStack = this.executionContextStack;
 
-        this.commands = CommandGenerator.generateCommands(programAst);
+        this.commands = ValueTypeHelper.reverseArray(CommandGenerator.generateCommands(programAst));
 
         this.messageGeneratedCallbacks = [];
         this.controlFlowConnectionCallbacks = [];
@@ -29,14 +29,14 @@
     {
         generateEvalCommands: function(callExpression, programAST)
         {
-            ValueTypeHelper.insertElementsIntoArrayAtIndex(this.commands, CommandGenerator.generateEvalCommands(callExpression, programAST), this.currentCommandIndex + 1);
+            ValueTypeHelper.pushAll(this.commands, ValueTypeHelper.reverseArray(CommandGenerator.generateEvalCommands(callExpression, programAST)));
         },
 
         runSync: function()
         {
-            for(this.currentCommandIndex = 0; this.currentCommandIndex < this.commands.length; this.currentCommandIndex++)
+            while(this.commands.length > 0)
             {
-                var command = this.commands[this.currentCommandIndex];
+                var command = this.commands.pop();
 
                 this.globalObject.setCurrentCommand(command);
 
@@ -980,28 +980,6 @@
             });
         },
 
-        _getLastEvaluatedConstruct: function()
-        {
-            for(var i = this.currentCommandIndex - 1; i > 0 ; i--)
-            {
-                var currentCommand = this.commands[i];
-
-                if(currentCommand.isExitFunctionContextCommand())
-                {
-                    return currentCommand.callExpressionCommand.codeConstruct;
-                }
-
-                if(!ASTHelper.isLoopStatement(currentCommand.codeConstruct)
-                    && !ASTHelper.isIfStatement(currentCommand.codeConstruct)
-                    && !ASTHelper.isSwitchCase(currentCommand.codeConstruct))
-                {
-                    return currentCommand.codeConstruct;
-                }
-            }
-
-            return null;
-        },
-
         _processThrowCommand: function(throwCommand)
         {
             this.throwExpressionValue = this.executionContextStack.getExpressionValue(throwCommand.codeConstruct.argument);
@@ -1063,7 +1041,8 @@
         {
             var endIndex = this.commands.indexOf(command.lastCallbackCommand);
             var hasFirstExitContextCommandBeenSkipped = false;
-            for(var i = this.currentCommandIndex + 1; i <= endIndex;)
+
+            for(var i = 0; i <= endIndex;)
             {
                 var currentCommand = this.commands[i];
 
@@ -1084,7 +1063,8 @@
         {
             var callExpressionCommand = returnCommand.parentFunctionCommand;
 
-            for(var i = this.currentCommandIndex + 1; i < this.commands.length;)
+
+            for(var i = 0; i < this.commands.length;)
             {
                 var command = this.commands[i];
 
@@ -1118,7 +1098,7 @@
 
             var labeledStatement = label.body;
 
-            for(var i = this.currentCommandIndex + 1; i < this.commands.length; )
+            for(var i = 0; i < this.commands.length; )
             {
                 var command = this.commands[i];
                 var isThisLabel = command.codeConstruct == labeledStatement;
@@ -1135,7 +1115,7 @@
         {
             var breakParent = ASTHelper.getLoopOrSwitchParent(breakCommand.codeConstruct);
 
-            for(var i = this.currentCommandIndex + 1; i < this.commands.length; )
+            for(var i = 0; i < this.commands.length; )
             {
                 var command = this.commands[i];
 
@@ -1163,13 +1143,13 @@
         {
             var continueParent = ASTHelper.getLoopParent(continueCommand.codeConstruct);
 
-            for(var i = this.currentCommandIndex + 1; i < this.commands.length; )
+            for(var i = 0; i < this.commands.length; )
             {
                 var command = this.commands[i];
 
                 if(!command.isForUpdateStatementCommand()
-                    && !command.isEndLoopStatementCommand()
-                    && (!command.isEvalForInWhereCommand() || command.codeConstruct != continueParent ))
+                && !command.isEndLoopStatementCommand()
+                && (!command.isEvalForInWhereCommand() || command.codeConstruct != continueParent ))
                 {
                     ValueTypeHelper.removeFromArrayByIndex(this.commands, i);
                 }
@@ -1179,7 +1159,7 @@
                 }
 
                 if((command.isLoopStatementCommand() || command.isForUpdateStatementCommand())
-                    && command.codeConstruct == continueParent)
+                && command.codeConstruct == continueParent)
                 {
                     break;
                 }
@@ -1197,7 +1177,7 @@
 
             var labeledStatement = label.body;
 
-            for(var i = this.currentCommandIndex + 1; i < this.commands.length; )
+            for(var i = 0; i < this.commands.length; )
             {
                 var command = this.commands[i];
                 var isThisLabel = command.codeConstruct == labeledStatement;
@@ -1212,7 +1192,7 @@
                 else { ValueTypeHelper.removeFromArrayByIndex(this.commands, i);}
 
                 if((command.isLoopStatementCommand() || command.isForUpdateStatementCommand())
-                    && isThisLabel && command.codeConstruct == continueParent)
+                 && isThisLabel && command.codeConstruct == continueParent)
                 {
                     break;
                 }
@@ -1226,23 +1206,17 @@
            || (ValueTypeHelper.isOfType(exceptionGeneratingArgument, Firecrow.N_Interpreter.Command) && exceptionGeneratingArgument.isEvalThrowExpressionCommand())))
             {
                 debugger;
-                Interpreter.notifyError
-                (
-                        "Exception generating error at:" + " - "
-                        + this.commands[this.currentCommandIndex].codeConstruct.loc.start.line + ": "
-                        + Firecrow.CodeTextSerializer.generateJsCode(this.commands[this.currentCommandIndex].codeConstruct)
-                        + "Call Stack: " + this.executionContextStack.getStackLines()
-                );
+                Interpreter.notifyError("Exception generating error");
             }
 
             if(this.tryStack.length == 0)
             {
                 debugger;
-                Interpreter.notifyError("Removing commands and there is no enclosing try catch block @ " + this.commands[this.currentCommandIndex].codeConstruct.loc.source);
+                Interpreter.notifyError("Removing commands and there is no enclosing try catch block");
                 return;
             }
 
-            for(var i = this.currentCommandIndex + 1; i < this.commands.length; )
+            for(var i = 0; i < this.commands.length; )
             {
                 var command = this.commands[i];
 
@@ -1269,17 +1243,12 @@
                     }
                 }
 
-                ValueTypeHelper.insertElementsIntoArrayAtIndex
+                ValueTypeHelper.pushAll(this.commands, ValueTypeHelper.reverseArray(CommandGenerator.generateCatchStatementExecutionCommands
                 (
-                    this.commands,
-                    CommandGenerator.generateCatchStatementExecutionCommands
-                    (
-                        this.tryStack[this.tryStack.length - 1],
-                        exceptionGeneratingArgument,
-                        this.commands[this.currentCommandIndex]
-                    ),
-                    i
-                );
+                    this.tryStack[this.tryStack.length - 1],
+                    exceptionGeneratingArgument,
+                    this.globalObject.currentCommand
+                )));
             }
         },
 
@@ -1289,7 +1258,7 @@
             {
                 var parentCommand = evalLogicalExpressionItemCommand.parentLogicalExpressionCommand;
 
-                for(var i = this.currentCommandIndex + 1; i < this.commands.length; )
+                for(var i = 0; i < this.commands.length; )
                 {
                     var command = this.commands[i];
 
@@ -1302,11 +1271,10 @@
 
         _generateCommandsAfterCallbackFunctionCommand: function(callInternalFunctionCommand)
         {
-            ValueTypeHelper.insertElementsIntoArrayAtIndex
+            ValueTypeHelper.pushAll
             (
                 this.commands,
-                CommandGenerator.generateCallbackFunctionExecutionCommands(callInternalFunctionCommand),
-                this.currentCommandIndex + 1
+                ValueTypeHelper.reverseArray(CommandGenerator.generateCallbackFunctionExecutionCommands(callInternalFunctionCommand))
             );
         },
 
@@ -1323,11 +1291,10 @@
 
             this.executionContextStack.setExpressionValue(newCommand.codeConstruct, newObject);
 
-            ValueTypeHelper.insertElementsIntoArrayAtIndex
+            ValueTypeHelper.pushAll
             (
                 this.commands,
-                CommandGenerator.generateFunctionExecutionCommands(newCommand, callee, newObject),
-                this.currentCommandIndex + 1
+                ValueTypeHelper.reverseArray(CommandGenerator.generateFunctionExecutionCommands(newCommand, callee, newObject))
             );
         },
 
@@ -1355,11 +1322,10 @@
                 }
             }
 
-            ValueTypeHelper.insertElementsIntoArrayAtIndex
+            ValueTypeHelper.pushAll
             (
                 this.commands,
-                CommandGenerator.generateFunctionExecutionCommands(callExpressionCommand, callFunction, baseObject),
-                this.currentCommandIndex + 1
+                ValueTypeHelper.reverseArray(CommandGenerator.generateFunctionExecutionCommands(callExpressionCommand, callFunction, baseObject))
             );
         },
 
@@ -1367,15 +1333,14 @@
         {
             if(loopCommand == null || loopCommand.isStartDoWhileCommand()) { return; }
 
-            ValueTypeHelper.insertElementsIntoArrayAtIndex
+            ValueTypeHelper.pushAll
             (
                 this.commands,
-                CommandGenerator.generateLoopExecutionCommands
+                ValueTypeHelper.reverseArray(CommandGenerator.generateLoopExecutionCommands
                 (
                     loopCommand,
                     !loopCommand.isEvalForInWhereCommand() ? this.executionContextStack.getExpressionValue(loopCommand.codeConstruct.test).jsValue : null
-                ),
-                this.currentCommandIndex + 1
+                ))
             );
         },
 
@@ -1383,24 +1348,25 @@
         {
             var ifConditionValue = this.executionContextStack.getExpressionValue(ifCommand.codeConstruct.test);
 
-            var generatedCommands = CommandGenerator.generateIfStatementBodyCommands(ifCommand, ifConditionValue.jsValue, ifCommand.parentFunctionCommand);
-
-            ValueTypeHelper.insertElementsIntoArrayAtIndex(this.commands, generatedCommands, this.currentCommandIndex + 1);
+            ValueTypeHelper.pushAll
+            (
+                this.commands,
+                ValueTypeHelper.reverseArray(CommandGenerator.generateIfStatementBodyCommands(ifCommand, ifConditionValue.jsValue, ifCommand.parentFunctionCommand))
+            );
         },
 
         _generateCommandsAfterConditionalCommand: function(conditionalCommand)
         {
             var conditionValue = this.executionContextStack.getExpressionValue(conditionalCommand.codeConstruct.test);
 
-            ValueTypeHelper.insertElementsIntoArrayAtIndex
+            ValueTypeHelper.pushAll()
             (
                 this.commands,
-                CommandGenerator.generateConditionalExpressionEvalBodyCommands
+                ValueTypeHelper.reverseArray(CommandGenerator.generateConditionalExpressionEvalBodyCommands
                 (
                     conditionalCommand,
                     conditionValue.jsValue
-                ),
-                this.currentCommandIndex + 1
+                ))
             );
         },
 
@@ -1408,7 +1374,7 @@
         {
             var switchDiscriminantValue = this.executionContextStack.getExpressionValue(caseCommand.parent.codeConstruct.discriminant);
             var caseValue = caseCommand.codeConstruct.test != null ? this.executionContextStack.getExpressionValue(caseCommand.codeConstruct.test)
-                : null;
+                                                                   : null;
 
             if(caseCommand.codeConstruct.test == null //is default
             || caseCommand.parent.hasBeenMatched //falls through
@@ -1417,7 +1383,11 @@
                 caseCommand.parent.hasBeenMatched = true;
                 caseCommand.parent.matchedCaseCommand = caseCommand;
 
-                ValueTypeHelper.insertElementsIntoArrayAtIndex(this.commands, CommandGenerator.generateCaseExecutionCommands(caseCommand), this.currentCommandIndex + 1);
+                ValueTypeHelper.pushAll
+                (
+                    this.commands,
+                    ValueTypeHelper.reverseArray(CommandGenerator.generateCaseExecutionCommands(caseCommand))
+                );
             }
         },
 
@@ -1435,11 +1405,10 @@
             //If there is no user-defined valueOf function just return
             if(valueOfFunction == null || valueOfFunction.iValue == null || valueOfFunction.isInternalFunction ) { return; }
 
-            ValueTypeHelper.insertElementsIntoArrayAtIndex
+            ValueTypeHelper.pushAll
             (
                 this.commands,
-                CommandGenerator.generateFunctionExecutionCommands(convertToPrimitiveCommand, valueOfFunction, expressionValue),
-                this.currentCommandIndex + 1
+                ValueTypeHelper.reverseArray(CommandGenerator.generateFunctionExecutionCommands(convertToPrimitiveCommand, valueOfFunction, expressionValue))
             );
         }
     };

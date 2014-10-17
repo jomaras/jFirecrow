@@ -239,22 +239,26 @@
             return true;
         },
 
-        reverseArray: function (array) {
-            if (array == null || array.length <= 1) {
-                return;
-            }
+        reverseArray: function (array)
+        {
+            if (array == null || array.length <= 1) { return; }
+            if (array.reverse) { array.reverse(); return array;}
 
             var length = array.length;
             var halfLength = length / 2;
 
-            for (var i = 0; i < halfLength; i++) {
+            for (var i = 0; i < halfLength; i++)
+            {
                 var temp = array[i];
                 array[i] = array[length - i - 1];
                 array[length - i - 1] = temp;
             }
+
+            return array;
         },
 
-        arrayContains: function (array, item) {
+        arrayContains: function (array, item)
+        {
             for (var i = 0; i < array.length; i++) {
                 if (array[i] === item) {
                     return true;
